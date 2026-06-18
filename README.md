@@ -1,29 +1,15 @@
-# OGTIC RRHH Cloud
+# SIRH OGTIC
 
-Versión preparada para Vercel usando carpeta `public`.
+Proyecto separado correctamente:
 
-## Estructura esperada
+- `public/index.html`
+- `public/styles.css`
+- `public/src/*.js`
+- `public/assets/*`
+- `supabase/*.sql`
 
-public/
-  index.html
-  styles.css
-  src/
-  assets/
+## Despliegue
 
-vercel.json
-package.json
-supabase/
-
-## Vercel
-
-Output Directory:
-public
-
-Build Command:
-npm run build
-
-Framework Preset:
-Other
-
-La app se conecta a Supabase desde:
-public/src/config.js
+Vercel:
+- Output Directory: `public`
+- Build Command: `npm run build`

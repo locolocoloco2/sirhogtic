@@ -308,3 +308,292 @@ document.getElementById('btnTicketEmpleado').onclick=()=>{document.querySelector
 async function boot(){ const {data:{session}}=await sb.auth.getSession(); if(!session)return; state.profile=await Api.profile(); document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); await loadData(); }
 boot();
 window.aprobarSolicitud=aprobarSolicitud; window.borrarFeriado=borrarFeriado; window.cerrarTicket=cerrarTicket;
+
+
+
+/* =========================================================
+   Menú hamburguesa móvil
+   ========================================================= */
+(function(){
+  const btn = document.getElementById('mobileMenuBtn');
+  const close = document.getElementById('mobileMenuClose');
+  const overlay = document.getElementById('mobileOverlay');
+
+  const openMenu = () => document.body.classList.add('menu-open');
+  const closeMenu = () => document.body.classList.remove('menu-open');
+
+  if (btn) btn.addEventListener('click', openMenu);
+  if (close) close.addEventListener('click', closeMenu);
+  if (overlay) overlay.addEventListener('click', closeMenu);
+
+  document.querySelectorAll('.nav-btn').forEach(navBtn => {
+    navBtn.addEventListener('click', () => {
+      if (window.innerWidth <= 900) closeMenu();
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) closeMenu();
+  });
+})();
+
+/* =========================================================
+   Filtros y paginación de tablas
+   ========================================================= */
+const tablePaginationState = {};
+
+function normalizeTableText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function ensureTableControls(tableId, placeholder='Filtrar tabla...') {
+  const tableBody = document.getElementById(tableId);
+  if (!tableBody) return null;
+
+  const wrap = tableBody.closest('.table-wrap');
+  if (!wrap) return null;
+
+  const key = tableId;
+  if (!tablePaginationState[key]) {
+    tablePaginationState[key] = { page: 1, pageSize: 25, filter: '' };
+  }
+
+  let toolbar = document.getElementById(`${tableId}Toolbar`);
+  let footer = document.getElementById(`${tableId}Footer`);
+
+  if (!toolbar) {
+    toolbar = document.createElement('div');
+    toolbar.id = `${tableId}Toolbar`;
+    toolbar.className = 'table-toolbar';
+    toolbar.innerHTML = `
+      <div class="table-filter">
+        <input id="${tableId}Filter" placeholder="${placeholder}" autocomplete="off">
+      </div>
+      <div class="table-page-size">
+        <span>Filas por página</span>
+        <select id="${tableId}PageSize">
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="250">250</option>
+        </select>
+      </div>
+    `;
+    wrap.parentNode.insertBefore(toolbar, wrap);
+
+    const filterInput = toolbar.querySelector(`#${tableId}Filter`);
+    const pageSizeSelect = toolbar.querySelector(`#${tableId}PageSize`);
+
+    filterInput.addEventListener('input', () => {
+      tablePaginationState[key].filter = filterInput.value;
+      tablePaginationState[key].page = 1;
+      renderAll();
+    });
+
+    pageSizeSelect.addEventListener('change', () => {
+      tablePaginationState[key].pageSize = Number(pageSizeSelect.value) || 25;
+      tablePaginationState[key].page = 1;
+      renderAll();
+    });
+  }
+
+  if (!footer) {
+    footer = document.createElement('div');
+    footer.id = `${tableId}Footer`;
+    footer.className = 'table-footer';
+    footer.innerHTML = `
+      <span id="${tableId}Info"></span>
+      <div class="table-pager">
+        <button id="${tableId}Prev" type="button">Anterior</button>
+        <span id="${tableId}Page" class="table-page-indicator">Página 1</span>
+        <button id="${tableId}Next" type="button">Siguiente</button>
+      </div>
+    `;
+    wrap.parentNode.insertBefore(footer, wrap.nextSibling);
+
+    footer.querySelector(`#${tableId}Prev`).addEventListener('click', () => {
+      tablePaginationState[key].page = Math.max(1, tablePaginationState[key].page - 1);
+      renderAll();
+    });
+
+    footer.querySelector(`#${tableId}Next`).addEventListener('click', () => {
+      tablePaginationState[key].page += 1;
+      renderAll();
+    });
+  }
+
+  return tablePaginationState[key];
+}
+
+function renderPaginatedTable({ tableId, rows, rowHtml, emptyHtml, filterPlaceholder }) {
+  const tableBody = document.getElementById(tableId);
+  if (!tableBody) return;
+
+  const st = ensureTableControls(tableId, filterPlaceholder);
+  if (!st) {
+    tableBody.innerHTML = rows.map(rowHtml).join('') || emptyHtml;
+    return;
+  }
+
+  const filter = normalizeTableText(st.filter);
+  const filtered = filter
+    ? rows.filter(row => normalizeTableText(row.__searchText || JSON.stringify(row)).includes(filter))
+    : rows;
+
+  const total = filtered.length;
+  const pageSize = st.pageSize || 25;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  st.page = Math.min(Math.max(1, st.page || 1), totalPages);
+
+  const start = (st.page - 1) * pageSize;
+  const visible = filtered.slice(start, start + pageSize);
+
+  tableBody.innerHTML = visible.map(rowHtml).join('') || emptyHtml;
+
+  const info = document.getElementById(`${tableId}Info`);
+  const page = document.getElementById(`${tableId}Page`);
+  const prev = document.getElementById(`${tableId}Prev`);
+  const next = document.getElementById(`${tableId}Next`);
+
+  if (info) {
+    const from = total ? start + 1 : 0;
+    const to = Math.min(start + pageSize, total);
+    info.textContent = `Mostrando ${from}-${to} de ${total}`;
+  }
+
+  if (page) page.textContent = `Página ${st.page} de ${totalPages}`;
+  if (prev) prev.disabled = st.page <= 1;
+  if (next) next.disabled = st.page >= totalPages;
+}
+
+function empleadoRowSearch(e) {
+  return [
+    e.estado,
+    e.estatus,
+    e.estatus_nomina,
+    e.cedula,
+    formatearCedula(e.cedula),
+    e.nombre,
+    e.cargo,
+    e.departamento,
+    e.genero,
+    e.sueldo,
+    mostrarFecha(e.fecha_ingreso)
+  ].join(' ');
+}
+
+renderEmpleados = function(){
+  const rows = (state.data.empleados || []).map(e => ({ ...e, __searchText: empleadoRowSearch(e) }));
+
+  renderPaginatedTable({
+    tableId: 'empleadosTable',
+    rows,
+    filterPlaceholder: 'Filtrar por cédula, nombre, cargo, departamento o estatus...',
+    emptyHtml: '<tr><td colspan="8">Sin datos</td></tr>',
+    rowHtml: e => `<tr>
+      <td><span class="badge ${typeof esActivoHistorico === 'function' && esActivoHistorico(e) ? 'ok' : 'danger'}">${e.estatus_nomina || e.estatus || e.estado || ''}</span></td>
+      <td>${formatearCedula(e.cedula)}</td>
+      <td><strong>${e.nombre || ''}</strong></td>
+      <td>${e.cargo || ''}</td>
+      <td>${e.departamento || ''}</td>
+      <td>${generoTexto(e.genero)}</td>
+      <td>${money(e.sueldo)}</td>
+      <td>${mostrarFecha(e.fecha_ingreso)}</td>
+    </tr>`
+  });
+};
+
+renderSolicitudes = function(){
+  const rows = (state.data.solicitudes || []).map(s => ({
+    ...s,
+    __searchText: [s.empleados?.nombre, s.empleados?.cedula, s.estado, s.observacion, mostrarFecha(s.fecha_inicio), mostrarFecha(s.fecha_fin)].join(' ')
+  }));
+
+  renderPaginatedTable({
+    tableId: 'solicitudesTable',
+    rows,
+    filterPlaceholder: 'Filtrar solicitudes por empleado, estado o fecha...',
+    emptyHtml: '<tr><td colspan="5">Sin solicitudes</td></tr>',
+    rowHtml: s => `<tr>
+      <td>${s.empleados?.nombre || ''}<br>${formatearCedula(s.empleados?.cedula || '')}</td>
+      <td>${mostrarFecha(s.fecha_inicio)} al ${mostrarFecha(s.fecha_fin)}</td>
+      <td>${s.dias_solicitados}</td>
+      <td><span class="badge ${s.estado === 'pendiente' ? 'warn' : 'ok'}">${s.estado}</span></td>
+      <td>${isAdmin() && s.estado === 'pendiente' ? `<button class="btn secondary" onclick="aprobarSolicitud('${s.id}')">Aprobar</button>` : ''}</td>
+    </tr>`
+  });
+};
+
+renderFeriados = function(){
+  const rows = (state.data.feriados || []).map(f => ({
+    ...f,
+    __searchText: [mostrarFecha(f.fecha), f.descripcion].join(' ')
+  }));
+
+  renderPaginatedTable({
+    tableId: 'feriadosTable',
+    rows,
+    filterPlaceholder: 'Filtrar feriados por fecha o descripción...',
+    emptyHtml: '<tr><td colspan="3">Sin feriados</td></tr>',
+    rowHtml: f => `<tr>
+      <td>${mostrarFecha(f.fecha)}</td>
+      <td>${f.descripcion}</td>
+      <td class="admin-only ${isAdmin() ? '' : 'hidden'}"><button class="btn secondary" onclick="borrarFeriado('${f.id}')">Eliminar</button></td>
+    </tr>`
+  });
+};
+
+renderInactivos = function(){
+  const fechaCorte = parseFecha('2026-06-25');
+  const rows = (state.data.empleados || [])
+    .filter(e => {
+      const fechaDesv = parseFecha(e.fecha_desvinculacion);
+      return e.estado === 'inactivo' && fechaDesv && fechaDesv >= fechaCorte;
+    })
+    .map(e => ({ ...e, __searchText: [e.cedula, formatearCedula(e.cedula), e.nombre, e.cargo, e.departamento, mostrarFecha(e.fecha_desvinculacion)].join(' ') }));
+
+  renderPaginatedTable({
+    tableId: 'inactivosTable',
+    rows,
+    filterPlaceholder: 'Filtrar inactivos por cédula, nombre, cargo o fecha...',
+    emptyHtml: '<tr><td colspan="7">Sin inactivos liquidables desde el 25/06/2026.</td></tr>',
+    rowHtml: e => {
+      const b = balanceEmpleado(e, e.fecha_desvinculacion || hoyISO());
+      const vd = Number(e.ultimo_sueldo_mensual_completo || e.sueldo || 0) / 21.67;
+      return `<tr>
+        <td>${formatearCedula(e.cedula)}</td>
+        <td>${e.nombre}</td>
+        <td>${money(e.ultimo_sueldo_mensual_completo || e.sueldo)}</td>
+        <td>${mostrarFecha(e.fecha_desvinculacion)}</td>
+        <td>${b.total}</td>
+        <td>${money(vd)}</td>
+        <td>${money(vd * b.total)}</td>
+      </tr>`;
+    }
+  });
+};
+
+renderTickets = function(){
+  const rows = (state.data.tickets || []).map(t => ({
+    ...t,
+    __searchText: [mostrarFecha(t.created_at), t.tipo, t.cedula_relacionada, t.estado, t.detalle].join(' ')
+  }));
+
+  renderPaginatedTable({
+    tableId: 'ticketsTable',
+    rows,
+    filterPlaceholder: 'Filtrar tickets por tipo, cédula, estado o detalle...',
+    emptyHtml: '<tr><td colspan="6">Sin tickets</td></tr>',
+    rowHtml: t => `<tr>
+      <td>${mostrarFecha(t.created_at)}</td>
+      <td>${t.tipo}</td>
+      <td>${formatearCedula(t.cedula_relacionada || '')}</td>
+      <td><span class="badge ${t.estado === 'abierto' ? 'warn' : 'ok'}">${t.estado}</span></td>
+      <td>${t.detalle}</td>
+      <td class="admin-only ${isAdmin() ? '' : 'hidden'}">${t.estado === 'abierto' ? `<button class="btn secondary" onclick="cerrarTicket('${t.id}')">Cerrar</button>` : ''}</td>
+    </tr>`
+  });
+};
