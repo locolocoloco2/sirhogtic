@@ -1,0 +1,10 @@
+{
+  "name": "ogtic-rh-cloud",
+  "version": "1.8.0",
+  "private": true,
+  "description": "Sistema RRHH OGTIC - frontend est\u00e1tico conectado a Supabase",
+  "scripts": {
+    "start": "echo 'Static app: open index.html'",
+    "build": "echo 'No build step required'"
+  }
+}

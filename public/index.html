@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OGTIC · RRHH Cloud</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="./assets/logo-ogtic.png" alt="OGTIC" onerror="this.style.display='none'">
+        <div>
+          <h1>Gestión RRHH</h1>
+          <p>Vacaciones, certificaciones, inactivos y tickets.</p>
+        </div>
+      </div>
+
+      <label>Correo institucional</label>
+      <input id="loginEmail" type="email" placeholder="usuario@ogtic.gob.do" autocomplete="email">
+
+      <label>Contraseña</label>
+      <input id="loginPassword" type="password" placeholder="Contraseña" autocomplete="current-password">
+
+      <button id="btnLogin" class="btn primary">Entrar</button>
+      <p id="loginMsg" class="form-msg"></p>
+
+      <div class="note warn">
+        El primer usuario admin se crea desde Supabase Auth y luego se asigna el rol en la tabla <strong>profiles</strong>.
+      </div>
+    </div>
+  </div>
+
+  <div id="appShell" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand-card">
+        <div class="brand-logo">
+          <img src="./assets/logo-ogtic.png" alt="OGTIC" onerror="this.style.display='none'">
+        </div>
+        <div>
+          <h2>Gestión Institucional</h2>
+          <p id="userRoleText">Cargando...</p>
+        </div>
+      </div>
+
+      <nav class="nav-list">
+        <button class="nav-btn active" data-page="dashboard">Resumen</button>
+        <button class="nav-btn admin-only" data-page="nomina">Nómina</button>
+        <button class="nav-btn" data-page="empleados">Colaborador</button>
+        <button class="nav-btn" data-page="solicitudes">Solicitudes</button>
+        <button class="nav-btn" data-page="certificaciones">Certificaciones</button>
+        <button class="nav-btn" data-page="inactivos">Inactivos</button>
+        <button class="nav-btn" data-page="feriados">Feriados</button>
+        <button class="nav-btn" data-page="tickets">Tickets</button>
+        <button class="nav-btn admin-only" data-page="respaldo">Respaldo</button>
+      </nav>
+
+      <button id="btnLogout" class="btn ghost">Salir</button>
+    </aside>
+
+    <main class="content">
+      <header class="hero">
+        <div>
+          <h1>Panel de Recursos Humanos</h1>
+          <p>Datos centralizados en Supabase. Los usuarios consultan y ejecutan; el administrador controla nómina, feriados y respaldos.</p>
+        </div>
+        <span id="todayText" class="hero-pill"></span>
+      </header>
+
+      <section id="page-dashboard" class="page active">
+        <div class="kpi-grid">
+          <div class="kpi"><span>Activos</span><strong id="kpiActivos">0</strong></div>
+          <div class="kpi"><span>Desvinculados históricos</span><strong id="kpiInactivos">0</strong></div>
+          <div class="kpi"><span>Solicitudes pendientes</span><strong id="kpiPendientes">0</strong></div>
+          <div class="kpi"><span>Tickets abiertos</span><strong id="kpiTickets">0</strong></div>
+        </div>
+      </section>
+
+      <section id="page-nomina" class="page">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Admin</span>
+              <h2>Cargar nómina histórica Excel</h2>
+              <p>Solo el administrador puede cargar la nómina histórica. El campo Estatus se usa para certificaciones: Activo = labora, Desvinculado = laboró. Para vacaciones no disfrutadas solo se tomarán inactivos marcados por el sistema desde el 25/06/2026.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label>Archivo Excel</label>
+              <input id="nominaFile" type="file" accept=".xlsx,.xls">
+            </div>
+            <div>
+              <label>Hoja</label>
+              <select id="nominaSheet"></select>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="btnProcesarNomina" class="btn primary">Procesar nómina</button>
+            <button id="btnPlantillaExcel" class="btn secondary">Descargar plantilla</button>
+          </div>
+
+          <p id="nominaMsg" class="form-msg"></p>
+        </div>
+
+        <div class="card">
+          <h2>Nómina cargada</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Estatus</th><th>Cédula</th><th>Nombre</th><th>Cargo</th><th>Depto.</th><th>Género</th><th>Sueldo</th><th>Ingreso</th></tr></thead>
+              <tbody id="empleadosTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-empleados" class="page">
+        <div class="grid-2">
+          <div class="card">
+            <span class="eyebrow">Consulta</span>
+            <h2>Buscar colaborador</h2>
+            <label>Cédula</label>
+            <div class="search-combo" data-target="buscarCedula">
+              <input id="buscarCedula" placeholder="Escribe cédula o nombre" autocomplete="off">
+              <div id="buscarCedulaResults" class="search-results hidden"></div>
+            </div>
+            <label>Fecha de referencia</label>
+            <input id="fechaReferencia" type="date">
+            <button id="btnBuscarEmpleado" class="btn primary">Consultar</button>
+            <div id="empleadoFicha" class="employee-card hidden"></div>
+          </div>
+
+          <div class="card">
+            <span class="eyebrow">Balance</span>
+            <h2>Vacaciones disponibles en OGTIC</h2>
+            <div class="kpi-grid compact">
+              <div class="kpi"><span>Total</span><strong id="balTotal">0</strong></div>
+              <div class="kpi"><span>Anterior</span><strong id="balAnterior">0</strong></div>
+              <div class="kpi"><span>Actual</span><strong id="balActual">0</strong></div>
+              <div class="kpi"><span>Años escala</span><strong id="balAnios">0</strong></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Período</th><th>Desde</th><th>Hasta</th><th>Generados</th><th>Consumidos</th><th>Disponibles</th></tr></thead>
+                <tbody id="balanceTable"></tbody>
+              </table>
+            </div>
+            <div class="actions">
+              <button id="btnTicketEmpleado" class="btn secondary">Solicitar corrección por ticket</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-solicitudes" class="page">
+        <div class="grid-2">
+          <div class="card">
+            <span class="eyebrow">Ejecución</span>
+            <h2>Nueva solicitud</h2>
+            <label>Cédula</label><div class="search-combo" data-target="solCedula">
+              <input id="solCedula" placeholder="Escribe cédula o nombre" autocomplete="off">
+              <div id="solCedulaResults" class="search-results hidden"></div>
+            </div>
+            <div class="grid-2">
+              <div><label>Inicio</label><input id="solInicio" type="date"></div>
+              <div><label>Fin</label><input id="solFin" type="date"></div>
+            </div>
+            <label>Observación</label><textarea id="solObs"></textarea>
+            <button id="btnCrearSolicitud" class="btn primary">Registrar solicitud</button>
+            <p id="solMsg" class="form-msg"></p>
+          </div>
+
+          <div class="card">
+            <h2>Solicitudes</h2>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Empleado</th><th>Rango</th><th>Días</th><th>Estado</th><th>Acción</th></tr></thead>
+                <tbody id="solicitudesTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-certificaciones" class="page">
+        <div class="cert-grid">
+          <div class="card">
+            <span class="eyebrow">Certificaciones</span>
+            <h2>Generar certificación</h2>
+            <label>Cédula</label><div class="search-combo" data-target="certCedula">
+              <input id="certCedula" placeholder="Escribe cédula o nombre" autocomplete="off">
+              <div id="certCedulaResults" class="search-results hidden"></div>
+            </div>
+            <div class="grid-2">
+              <div><label>Oficio</label><input id="certOficio" placeholder="RRHH- 0000-26"></div>
+              <div><label>Fecha</label><input id="certFecha" type="date"></div>
+            </div>
+            <label>Iniciales elaboró</label><input id="certElaboro" placeholder="cr">
+            <div class="actions">
+              <button id="btnPreviewCert" class="btn primary">Vista previa</button>
+              <button id="btnGuardarCert" class="btn secondary">Guardar historial</button>
+              <button id="btnPrintCert" class="btn secondary">Imprimir</button>
+            </div>
+          </div>
+
+          <div class="card cert-preview-card">
+            <h2>Vista previa</h2>
+            <div class="cert-preview-shell">
+              <div class="cert-preview-stage">
+            <div id="certPrintArea" class="cert-page">
+              <img class="cert-bg" src="./assets/certificacion-fondo.png" alt="" aria-hidden="true">
+              <div class="cert-oficio" id="certPOficio">RRHH- ____-__</div>
+              <div class="cert-date" id="certPFecha">Santo Domingo, D.N.<br>__/__/____.</div>
+              <div class="cert-title">A QUIEN PUEDA INTERESAR</div>
+              <div class="cert-body">
+                <p id="certP1">Por este medio hacemos constar que...</p>
+                <p id="certP2">Expedimos esta constancia...</p>
+                <p>Atentamente,</p>
+              </div>
+              <div class="cert-signature">
+                <div class="cert-signature-name">Vikianny M. Muñoz</div>
+                <div>Directora de Recursos Humanos</div>
+                <div>Oficina Gubernamental de Tecnologías<br>de la Información y Comunicación.</div>
+                <div id="certIniciales">VM/-</div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-inactivos" class="page">
+        <div class="card">
+          <h2>Inactivos</h2>
+          <div class="actions">
+            <button id="btnCalcularInactivos" class="btn primary">Calcular todos</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cédula</th><th>Nombre</th><th>Sueldo</th><th>Fecha desv.</th><th>Días</th><th>Valor diario</th><th>Monto</th></tr></thead>
+              <tbody id="inactivosTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-feriados" class="page">
+        <div class="grid-2">
+          <div class="card admin-only">
+            <span class="eyebrow">Admin</span>
+            <h2>Modificar feriados</h2>
+            <label>Fecha</label><input id="ferFecha" type="date">
+            <label>Descripción</label><input id="ferDesc">
+            <button id="btnGuardarFeriado" class="btn primary">Guardar feriado</button>
+          </div>
+          <div class="card">
+            <h2>Feriados</h2>
+            <p>Los usuarios no administradores pueden consultar feriados, pero no modificarlos.</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Fecha</th><th>Descripción</th><th class="admin-only">Acción</th></tr></thead>
+                <tbody id="feriadosTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-tickets" class="page">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Crear ticket al administrador</h2>
+            <label>Tipo</label>
+            <select id="ticketTipo">
+              <option value="correccion_empleado">Corrección de empleado</option>
+              <option value="feriado">Feriado</option>
+              <option value="periodo_reconocido">Tiempo reconocido</option>
+              <option value="otro">Otro</option>
+            </select>
+            <label>Cédula relacionada</label><input id="ticketCedula" placeholder="Opcional">
+            <label>Detalle</label><textarea id="ticketDetalle"></textarea>
+            <button id="btnCrearTicket" class="btn primary">Enviar ticket</button>
+          </div>
+          <div class="card">
+            <h2>Tickets</h2>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Fecha</th><th>Tipo</th><th>Cédula</th><th>Estado</th><th>Detalle</th><th class="admin-only">Acción</th></tr></thead>
+                <tbody id="ticketsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-respaldo" class="page">
+        <div class="card admin-only">
+          <h2>Respaldo</h2>
+          <p>Solo admin. Exporta datos operativos en JSON.</p>
+          <button id="btnExportBackup" class="btn primary">Exportar respaldo JSON</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./src/config.js"></script>
+  <script src="./src/utils.js"></script>
+  <script src="./src/supabaseClient.js"></script>
+  <script src="./src/api.js"></script>
+  <script src="./src/app.js"></script>
+</body>
+</html>
