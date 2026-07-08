@@ -280,47 +280,51 @@ body {
   }
 }
 
-/* ===== v1.8: Ajuste fino de certificaciones según modelo institucional =====
-   Reduce espacios verticales excesivos y mantiene proporciones de hoja carta. */
+/* ===== v1.9: Ajuste de márgenes laterales y peso de párrafos =====
+   Se aumenta ligeramente el margen izquierdo/derecho del contenido y el peso del texto del cuerpo. */
 .cert-page {
   font-size: 10.2pt !important;
   line-height: 1.45 !important;
 }
 
 .cert-oficio {
-  left: .84in !important;
+  left: .96in !important;
   top: 2.04in !important;
   font-weight: 700 !important;
 }
 
 .cert-date {
-  right: .98in !important;
+  right: 1.10in !important;
   top: 2.04in !important;
   text-align: right !important;
   line-height: 1.85 !important;
 }
 
 .cert-title {
+  left: .96in !important;
+  right: 1.00in !important;
   top: 3.23in !important;
   font-size: 10.1pt !important;
   font-weight: 700 !important;
 }
 
 .cert-body {
-  left: .84in !important;
-  right: .87in !important;
+  left: .96in !important;
+  right: 1.00in !important;
   top: 3.87in !important;
   font-size: 10.2pt !important;
   line-height: 1.72 !important;
   text-align: justify !important;
+  font-weight: 600 !important;
 }
 
 .cert-body p {
   margin: 0 0 .24in !important;
+  font-weight: 600 !important;
 }
 
 .cert-signature {
-  left: .84in !important;
+  left: .96in !important;
   top: 7.18in !important;
   font-size: 10.2pt !important;
   line-height: 1.18 !important;
