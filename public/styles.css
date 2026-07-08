@@ -726,3 +726,15 @@ body {
   margin-bottom: .035in !important;
   font-weight: 700 !important;
 }
+
+
+/* ===== v2.0: microajuste vertical de párrafos finales =====
+   Baja ligeramente “Expedimos...” y “Atentamente,” sin mover la firma. */
+.cert-body #certP2 {
+  margin-top: .06in !important;
+}
+
+.cert-body p:last-child {
+  margin-top: .10in !important;
+  margin-bottom: 0 !important;
+}
