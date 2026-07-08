@@ -707,12 +707,12 @@ body {
   font-size: 10.2pt !important;
   line-height: 1.72 !important;
   text-align: justify !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
 }
 
 .cert-body p {
   margin: 0 0 .24in !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
 }
 
 .cert-signature {
