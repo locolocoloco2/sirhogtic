@@ -268,7 +268,7 @@ function verboCertificacion(estatus){
 }
 function previewCert(){
   const e=findEmp(document.getElementById('certCedula').value);
-  if(!e)return toast('Empleado no encontrado','error');
+  if(!e){ toast('Empleado no encontrado','error'); return false; }
 
   const oficio=document.getElementById('certOficio').value||'RRHH- ____-__';
   const fecha=document.getElementById('certFecha').value||hoyISO();
@@ -283,6 +283,97 @@ function previewCert(){
 
   document.getElementById('certP2').textContent=segundoParrafoCertificacion(fecha);
   document.getElementById('certIniciales').textContent=`VM/${document.getElementById('certElaboro').value||'-'}-`;
+  return true;
+}
+
+function imprimirCertificacion(){
+  if(previewCert() === false) return;
+
+  const cert = document.getElementById('certPrintArea');
+  if(!cert) return;
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden','true');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.opacity = '0';
+  document.body.appendChild(iframe);
+
+  const baseUrl = window.location.href.replace(/[^/]*$/, '');
+  const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+    .map(node => node.outerHTML)
+    .join('\n');
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <base href="${baseUrl}">
+  <title>Certificación</title>
+  ${styles}
+  <style>
+    @page { size: letter; margin: 0; }
+    html, body {
+      width: 8.5in !important;
+      height: 11in !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      background: #fff !important;
+    }
+    body { display: block !important; }
+    #certPrintArea, .cert-page {
+      position: fixed !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 8.5in !important;
+      height: 11in !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      transform: none !important;
+      box-shadow: none !important;
+      page-break-before: avoid !important;
+      page-break-after: avoid !important;
+      break-before: avoid-page !important;
+      break-after: avoid-page !important;
+    }
+    #certPrintArea *, .cert-page * { visibility: visible !important; }
+    .cert-bg { display: block !important; }
+  </style>
+</head>
+<body>${cert.outerHTML}</body>
+</html>`);
+  doc.close();
+
+  const printNow = () => {
+    const win = iframe.contentWindow;
+    win.focus();
+    win.print();
+    setTimeout(() => iframe.remove(), 1500);
+  };
+
+  const waitForAssets = async () => {
+    const imgs = Array.from(doc.images);
+    await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise(resolve => {
+      img.onload = resolve;
+      img.onerror = resolve;
+    })));
+
+    if(doc.fonts && doc.fonts.ready){
+      try { await doc.fonts.ready; } catch(_) {}
+    }
+
+    setTimeout(printNow, 150);
+  };
+
+  waitForAssets();
 }
 
 async function guardarCert(){ const e=findEmp(document.getElementById('certCedula').value); if(!e)return; const {error}=await Api.insert('certificaciones',{empleado_id:e.id, numero_oficio:document.getElementById('certOficio').value, fecha_emision:document.getElementById('certFecha').value, iniciales_firma:'VM', iniciales_elaboro:document.getElementById('certElaboro').value}); if(error)return toast(error.message,'error'); toast('Certificación guardada'); await loadData(); }
@@ -301,7 +392,7 @@ document.getElementById('btnProcesarNomina').onclick=procesarNomina;
 document.getElementById('btnPlantillaExcel').onclick=plantillaExcel;
 document.getElementById('btnPreviewCert').onclick=previewCert;
 document.getElementById('btnGuardarCert').onclick=guardarCert;
-document.getElementById('btnPrintCert').onclick=()=>{previewCert(); window.print();};
+document.getElementById('btnPrintCert').onclick=imprimirCertificacion;
 document.getElementById('btnExportBackup').onclick=exportBackup;
 document.getElementById('btnTicketEmpleado').onclick=()=>{document.querySelector('[data-page="tickets"]').click(); document.getElementById('ticketCedula').value=document.getElementById('buscarCedula').value;};
 
