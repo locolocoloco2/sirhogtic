@@ -256,6 +256,31 @@ function fechaLargaCertificacion(iso){
   const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   return `${String(d.getDate()).padStart(2,'0')} de ${meses[d.getMonth()]} ${d.getFullYear()}`;
 }
+
+function fechaExtendidaCertificacion(valor){
+  const d=parseFecha(valor);
+  if(!d) return '';
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${String(d.getDate()).padStart(2,'0')} de ${meses[d.getMonth()]} del año ${d.getFullYear()}`;
+}
+function tratamientoCertificacion(e){
+  return normalizarGenero(e.genero)==='F' ? ['la','Sra.'] : ['el','Sr.'];
+}
+function primerApellidoCertificacion(nombre){
+  const partes=String(nombre||'').trim().split(/\s+/).filter(Boolean);
+  if(partes.length>=3) return partes[partes.length-2];
+  if(partes.length>=2) return partes[partes.length-1];
+  return partes[0] || '';
+}
+function segundoParrafoVacaciones(e, textoVacaciones){
+  const limpio=String(textoVacaciones||'').trim().replace(/\.$/, '');
+  if(!limpio) return '';
+  const tr=tratamientoCertificacion(e);
+  const apellido=primerApellidoCertificacion(e.nombre);
+  const sujeto=apellido ? `${tr[1]} ${apellido}` : tr[1];
+  return `En ese mismo orden, hacemos de su conocimiento que ${tr[0]} ${sujeto}, tiene ${limpio}.`;
+}
+
 function segundoParrafoCertificacion(iso){
   const d=parseFecha(iso);
   if(!d) return 'Expedimos esta constancia a solicitud de la parte interesada.';
@@ -275,13 +300,22 @@ function previewCert(){
   document.getElementById('certPOficio').textContent=oficio;
   document.getElementById('certPFecha').innerHTML=`Santo Domingo, D.N.<br>${fechaLargaCertificacion(fecha)}.`;
 
-  const tr=normalizarGenero(e.genero)==='F'?['la','Sra.']:['el','Sr.'];
-  const verbo=verboCertificacion(e.estatus_nomina);
+  const tr=tratamientoCertificacion(e);
+  const fechaSalida=document.getElementById('certFechaSalida')?.value || e.fecha_desvinculacion || '';
+  const esLaboro=Boolean(fechaSalida) || verboCertificacion(e.estatus_nomina)==='laboró';
+  const verbo=esLaboro ? 'laboró' : 'labora';
+  const fechaIngresoTexto=fechaExtendidaCertificacion(e.fecha_ingreso) || mostrarFecha(e.fecha_ingreso);
+  const fechaSalidaTexto=fechaExtendidaCertificacion(fechaSalida);
+  const tramoLaboral=esLaboro && fechaSalidaTexto
+    ? `${verbo} en esta Institución desde el ${fechaIngresoTexto} hasta el ${fechaSalidaTexto}`
+    : `${verbo} en esta Institución desde el ${fechaIngresoTexto}`;
 
   document.getElementById('certP1').innerHTML=
-    `Por este medio hacemos constar que ${tr[0]} ${tr[1]} <strong>${e.nombre}</strong>, Cédula de Identidad y Electoral <strong>Núm. ${formatearCedula(e.cedula)}</strong>, ${verbo} en esta Institución desde el ${mostrarFecha(e.fecha_ingreso)}, desempeñándose como <strong>${e.cargo||''}</strong>, devengando un salario mensual de <strong>${money(e.sueldo)} (${salarioLetras(e.sueldo)})</strong>.`;
+    `Por este medio hacemos constar que ${tr[0]} ${tr[1]} <strong>${e.nombre}</strong>, Cédula de Identidad y Electoral <strong>Núm. ${formatearCedula(e.cedula)}</strong>, ${tramoLaboral}, desempeñándose como <strong>${e.cargo||''}</strong>, devengando un salario mensual de <strong>${money(e.sueldo)} (${salarioLetras(e.sueldo)})</strong>.`;
 
-  document.getElementById('certP2').textContent=segundoParrafoCertificacion(fecha);
+  const vacacionesTexto=document.getElementById('certVacaciones')?.value || '';
+  const segundoParrafo=segundoParrafoVacaciones(e, vacacionesTexto);
+  document.getElementById('certP2').textContent=segundoParrafo || segundoParrafoCertificacion(fecha);
   document.getElementById('certIniciales').textContent=`VM/${document.getElementById('certElaboro').value||'-'}-`;
   return true;
 }
