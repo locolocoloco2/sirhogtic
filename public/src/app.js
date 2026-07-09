@@ -314,8 +314,13 @@ function previewCert(){
     `Por este medio hacemos constar que ${tr[0]} ${tr[1]} <strong>${e.nombre}</strong>, Cédula de Identidad y Electoral <strong>Núm. ${formatearCedula(e.cedula)}</strong>, ${tramoLaboral}, desempeñándose como <strong>${e.cargo||''}</strong>, devengando un salario mensual de <strong>${money(e.sueldo)} (${salarioLetras(e.sueldo)})</strong>.`;
 
   const vacacionesTexto=document.getElementById('certVacaciones')?.value || '';
-  const segundoParrafo=segundoParrafoVacaciones(e, vacacionesTexto);
-  document.getElementById('certP2').textContent=segundoParrafo || segundoParrafoCertificacion(fecha);
+  const parrafoVacaciones=segundoParrafoVacaciones(e, vacacionesTexto);
+  const certP2=document.getElementById('certP2');
+  certP2.textContent=parrafoVacaciones;
+  certP2.style.display=parrafoVacaciones ? 'block' : 'none';
+
+  // El párrafo de expedición debe aparecer siempre, exista o no información de vacaciones.
+  document.getElementById('certP3').textContent=segundoParrafoCertificacion(fecha);
   document.getElementById('certIniciales').textContent=`VM/${document.getElementById('certElaboro').value||'-'}-`;
   return true;
 }

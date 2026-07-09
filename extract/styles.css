@@ -346,3 +346,13 @@ body {
   margin-top: .10in !important;
   margin-bottom: 0 !important;
 }
+
+
+/* ===== v2.2: vacaciones y expedición en párrafos independientes ===== */
+.cert-body #certP2 {
+  margin-top: .06in !important;
+}
+
+.cert-body #certP3 {
+  margin-top: .04in !important;
+}
