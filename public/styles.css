@@ -748,3 +748,52 @@ body {
 .cert-body #certP3 {
   margin-top: .04in !important;
 }
+
+/* =========================================================
+   v2: Acciones de Personal
+   ========================================================= */
+.muted{color:var(--muted)}
+.ap-form-sub{margin:18px 0 4px;color:var(--navy);font-size:.95rem;border-bottom:2px solid var(--border);padding-bottom:6px}
+.ap-hint{font-size:.8rem;margin:6px 0 10px}
+.ap-chip{padding:8px 12px;font-size:.8rem}
+
+/* Matriz de naturaleza (captura) */
+.ap-nat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ap-nat-col{border:1px solid var(--border);border-radius:14px;padding:10px;background:#fbfdff}
+.ap-nat-col h4{margin:0 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:#0f4d77;text-align:center;background:#eaf2fa;border-radius:8px;padding:5px}
+.ap-nat-opt{display:flex;gap:7px;align-items:flex-start;margin:6px 0;font-size:.8rem;color:var(--text);cursor:pointer;line-height:1.25}
+.ap-nat-opt input{width:auto;margin:2px 0 0;flex:0 0 auto}
+@media(max-width:1200px){.ap-nat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.ap-nat-grid{grid-template-columns:1fr}}
+
+/* Página imprimible (8.5x11) del formulario */
+.ap-page{width:8.5in;height:11in;background:#fff;position:relative;box-shadow:0 15px 40px rgba(0,0,0,.16);font-family:'Poppins',sans-serif;color:#1a1a1a;flex:0 0 auto;padding:.32in .5in .3in .5in;overflow:hidden}
+.ap-page .ap-stripe{position:absolute;top:0;right:0;height:100%;width:.26in;object-fit:cover;object-position:right top;z-index:0;pointer-events:none}
+.ap-header{position:relative;z-index:1;display:flex;align-items:center;margin-bottom:.08in}
+.ap-header .ap-logo{height:.62in;width:auto;max-width:3.3in;object-fit:contain}
+.ap-doc-title{position:relative;z-index:1;background:#002060;color:#fff;text-align:center;font-weight:700;font-size:11pt;letter-spacing:.01em;padding:6px 0;border-radius:2px;margin-bottom:.06in}
+.ap-table{position:relative;z-index:1;width:100%!important;border-collapse:collapse;min-width:0!important;table-layout:fixed;margin-bottom:.05in}
+.ap-table td{border:.75pt solid #000;padding:2.5pt 5pt;font-size:7.6pt;line-height:1.28;vertical-align:top;word-wrap:break-word}
+.ap-band{background:#808080;color:#fff;font-weight:700;text-align:center;text-transform:uppercase;font-size:7.8pt;letter-spacing:.02em;padding:3.5pt 0!important}
+.ap-lbl{background:#f0f0f0;font-weight:600;width:1.85in}
+.ap-val{font-weight:500}
+.ap-nat-head td{background:#808080;color:#fff;font-weight:700;text-align:center;font-size:7.4pt;width:25%}
+.ap-nat-body td{font-size:7.2pt;line-height:1.5;padding:4pt 5pt}
+.ap-nat-body span{display:block;margin:1pt 0}
+.ap-nat-body .on{font-weight:700}
+.ap-nat-rango{margin-top:3pt!important;font-style:italic}
+.ap-firmas td{border:.75pt solid #000}
+.ap-firma-space{height:.7in}
+.ap-firma-lbl{text-align:center;font-weight:600;font-size:7.8pt;padding:3pt 0!important}
+
+/* Escalado de la vista previa en pantallas pequeñas (igual criterio que certificaciones) */
+@media(max-width:1200px){.ap-page{transform:scale(.82);transform-origin:top left}}
+@media(max-width:1020px){.ap-page{transform:scale(.72);transform-origin:top left}}
+@media(max-width:760px){.ap-page{transform:scale(.52);transform-origin:top left}}
+@media(max-width:480px){.ap-page{transform:scale(.38);transform-origin:top left}}
+
+@media print{
+  body *{visibility:hidden!important}
+  #apPrintArea,#apPrintArea *{visibility:visible!important}
+  #apPrintArea{position:fixed!important;left:0!important;top:0!important;width:8.5in!important;height:11in!important;margin:0!important;box-shadow:none!important;transform:none!important;page-break-after:avoid!important;break-after:avoid-page!important}
+}

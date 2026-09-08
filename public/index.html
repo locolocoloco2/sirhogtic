@@ -56,6 +56,7 @@
         <button class="nav-btn" data-page="empleados">Colaborador</button>
         <button class="nav-btn" data-page="solicitudes">Solicitudes</button>
         <button class="nav-btn" data-page="certificaciones">Certificaciones</button>
+        <button class="nav-btn" data-page="acciones">Acciones de Personal</button>
         <button class="nav-btn" data-page="inactivos">Inactivos</button>
         <button class="nav-btn" data-page="feriados">Feriados</button>
         <button class="nav-btn" data-page="tickets">Tickets</button>
@@ -237,6 +238,149 @@
                 <div>Oficina Gubernamental de Tecnologías<br>de la Información y Comunicación.</div>
                 <div id="certIniciales">VM/-</div>
               </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-acciones" class="page">
+        <div class="cert-grid">
+          <div class="card">
+            <span class="eyebrow">Acciones de Personal</span>
+            <h2>Formulario de acción de personal</h2>
+
+            <label>Cédula del colaborador</label>
+            <div class="search-combo" data-target="apCedula">
+              <input id="apCedula" placeholder="Escribe cédula o nombre" autocomplete="off">
+              <div id="apCedulaResults" class="search-results hidden"></div>
+            </div>
+
+            <h3 class="ap-form-sub">Datos personales</h3>
+            <label>Nombre</label><input id="apNombre" placeholder="Nombre completo">
+            <div class="grid-2">
+              <div><label>Cédula</label><input id="apCedulaVal" placeholder="000-0000000-0"></div>
+              <div><label>Fecha de ingreso</label><input id="apFechaIngreso" type="date"></div>
+            </div>
+            <label>Dirección / Departamento</label><input id="apDepartamento" placeholder="Dirección o departamento">
+            <div class="grid-2">
+              <div><label>Superior/a inmediato/a</label><input id="apSuperior" placeholder="Encargado del área"></div>
+              <div><label>Sede de trabajo</label><input id="apSede" placeholder="Oficina Principal"></div>
+            </div>
+            <div class="grid-2">
+              <div><label>Cargo</label><input id="apCargo" placeholder="Cargo actual"></div>
+              <div><label>Sueldo RD$</label><input id="apSueldo" type="number" step="0.01" placeholder="0.00"></div>
+            </div>
+
+            <h3 class="ap-form-sub">Naturaleza de la acción</h3>
+            <p class="muted ap-hint">Marca la casilla que corresponde. Las opciones de <strong>Cambio</strong> habilitan el cambio de datos laborales; las de <strong>Licencia</strong> habilitan el rango Desde–Hasta.</p>
+            <div id="apNaturaleza" class="ap-nat-grid"></div>
+            <div id="apLicenciaRango" class="grid-2 ap-licencia hidden">
+              <div><label>Licencia desde</label><input id="apLicDesde" type="date"></div>
+              <div><label>Licencia hasta</label><input id="apLicHasta" type="date"></div>
+            </div>
+
+            <div id="apCambioSection" class="ap-cambio hidden">
+              <h3 class="ap-form-sub">Cambio de datos laborales</h3>
+              <label>Área de trabajo</label><input id="apCambioArea" placeholder="Nueva área de trabajo">
+              <label>Superior/a inmediato/a</label><input id="apCambioSuperior" placeholder="Encargado del área">
+              <div class="grid-2">
+                <div><label>Sede de trabajo</label><input id="apCambioSede" placeholder="Sede aprobada"></div>
+                <div><label>Cargo aprobado</label><input id="apCambioCargo" placeholder="Nuevo cargo"></div>
+              </div>
+              <div class="grid-2">
+                <div><label>¿Aplica aumento de sueldo?</label>
+                  <select id="apCambioAplicaAumento"><option value="No">No</option><option value="Sí">Sí</option></select>
+                </div>
+                <div><label>Salario aprobado RD$</label><input id="apCambioSalario" type="number" step="0.01" placeholder="0.00"></div>
+              </div>
+            </div>
+
+            <h3 class="ap-form-sub">Información de la acción</h3>
+            <label>Motivación</label>
+            <textarea id="apMotivacion" placeholder="Ej.: Efectivo al 01 de septiembre 2026"></textarea>
+            <div class="actions" style="margin-top:8px">
+              <button id="btnApMotivIngreso" type="button" class="btn secondary ap-chip">Efectivo (ingreso)</button>
+              <button id="btnApMotivSalida" type="button" class="btn secondary ap-chip">Efectivo (salida)</button>
+            </div>
+            <label>Fecha de la acción</label><input id="apFechaAccion" type="date">
+
+            <div class="actions">
+              <button id="btnPreviewAccion" class="btn primary">Vista previa</button>
+              <button id="btnGuardarAccion" class="btn secondary">Guardar historial</button>
+              <button id="btnPrintAccion" class="btn secondary">Imprimir</button>
+            </div>
+            <p id="apMsg" class="form-msg"></p>
+          </div>
+
+          <div class="card cert-preview-card">
+            <h2>Vista previa</h2>
+            <div class="cert-preview-shell">
+              <div class="cert-preview-stage">
+                <div id="apPrintArea" class="ap-page">
+                  <div class="ap-header">
+                    <img class="ap-logo" src="./assets/ogtic-logo-full.png" alt="OGTIC" onerror="this.style.display='none'">
+                    <img class="ap-stripe" src="./assets/ogtic-stripe.png" alt="" aria-hidden="true" onerror="this.style.display='none'">
+                  </div>
+                  <div class="ap-doc-title">FORMULARIO DE ACCIÓN DE PERSONAL</div>
+
+                  <table class="ap-table">
+                    <tr><td class="ap-band" colspan="4">DATOS PERSONALES DEL/DE LA COLABORADOR/A</td></tr>
+                    <tr>
+                      <td class="ap-lbl">Nombre</td><td class="ap-val" id="apvNombre"></td>
+                      <td class="ap-lbl">Cédula</td><td class="ap-val" id="apvCedula"></td>
+                    </tr>
+                    <tr><td class="ap-lbl">Dirección/ Departamento</td><td class="ap-val" colspan="3" id="apvDepartamento"></td></tr>
+                    <tr><td class="ap-lbl">Superior/a inmediato/a</td><td class="ap-val" colspan="3" id="apvSuperior"></td></tr>
+                    <tr>
+                      <td class="ap-lbl">Sede de trabajo</td><td class="ap-val" id="apvSede"></td>
+                      <td class="ap-lbl">Cargo</td><td class="ap-val" id="apvCargo"></td>
+                    </tr>
+                    <tr>
+                      <td class="ap-lbl">Fecha de ingreso</td><td class="ap-val" id="apvFechaIngreso"></td>
+                      <td class="ap-lbl">Sueldo RD$</td><td class="ap-val" id="apvSueldo"></td>
+                    </tr>
+                  </table>
+
+                  <table class="ap-table">
+                    <tr><td class="ap-band" colspan="4">NATURALEZA DE LA ACCIÓN</td></tr>
+                    <tr class="ap-nat-head">
+                      <td>Designación</td><td>Cambio</td><td>Licencia</td><td>Separación del servicio</td>
+                    </tr>
+                    <tr class="ap-nat-body">
+                      <td id="apvNatDesignacion"></td>
+                      <td id="apvNatCambio"></td>
+                      <td id="apvNatLicencia"></td>
+                      <td id="apvNatSeparacion"></td>
+                    </tr>
+                  </table>
+
+                  <table class="ap-table">
+                    <tr><td class="ap-band" colspan="4">CAMBIO DE DATOS LABORALES DEL/DE LA COLABORADOR/A</td></tr>
+                    <tr><td class="ap-lbl">Área de trabajo</td><td class="ap-val" colspan="3" id="apvCambioArea"></td></tr>
+                    <tr><td class="ap-lbl">Superior/a Inmediato/a</td><td class="ap-val" colspan="3" id="apvCambioSuperior"></td></tr>
+                    <tr>
+                      <td class="ap-lbl">Sede de trabajo</td><td class="ap-val" id="apvCambioSede"></td>
+                      <td class="ap-lbl">Cargo aprobado</td><td class="ap-val" id="apvCambioCargo"></td>
+                    </tr>
+                    <tr>
+                      <td class="ap-lbl">¿Aplica aumento de sueldo?</td><td class="ap-val" id="apvCambioAumento"></td>
+                      <td class="ap-lbl">Salario aprobado</td><td class="ap-val" id="apvCambioSalario"></td>
+                    </tr>
+                  </table>
+
+                  <table class="ap-table">
+                    <tr><td class="ap-band" colspan="4">INFORMACIÓN DE LA ACCIÓN</td></tr>
+                    <tr><td class="ap-lbl">Motivación</td><td class="ap-val" colspan="3" id="apvMotivacion"></td></tr>
+                    <tr><td class="ap-lbl">Fecha de la acción</td><td class="ap-val" colspan="3" id="apvFechaAccion"></td></tr>
+                  </table>
+
+                  <table class="ap-table ap-firmas">
+                    <tr><td class="ap-band" colspan="2">FIRMAS</td></tr>
+                    <tr><td class="ap-firma-space"></td><td class="ap-firma-space"></td></tr>
+                    <tr><td class="ap-firma-lbl" id="apvFirmaRrhh">Director/ a de Recursos Humanos</td><td class="ap-firma-lbl" id="apvFirmaGeneral">Director/a General</td></tr>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
