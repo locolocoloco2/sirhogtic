@@ -479,6 +479,7 @@ const AP_NATURALEZA = [
 const AP_CAMBIO_KEYS = new Set(AP_NATURALEZA[1].items.map(i=>i[0]));
 const AP_LICENCIA_KEYS = new Set(AP_NATURALEZA[2].items.map(i=>i[0]));
 const apSelected = new Set();
+let apEditId = null; // id de la acción en edición (null = crear nueva)
 
 function renderApNaturalezaInputs(){
   const cont = document.getElementById('apNaturaleza');
@@ -607,11 +608,63 @@ async function guardarAccion(){
     motivacion: document.getElementById('apMotivacion').value || null,
     fecha_accion: fechaAccion
   };
-  const {error} = await Api.insert('acciones_personal', payload);
+  let error;
+  if(apEditId){
+    ({ error } = await sb.from('acciones_personal').update(payload).eq('id', apEditId));
+  } else {
+    ({ error } = await Api.insert('acciones_personal', payload));
+  }
   if(error) return toast(error.message,'error');
-  toast('Acción de personal guardada en el historial');
+  if(apEditId){ toast('Acción actualizada'); cancelarEdicionAccion(); }
+  else toast('Acción de personal guardada en el historial');
   cargarHistorialAcciones();
 }
+
+// Carga una acción guardada dentro del formulario de captura (para editarla).
+function cargarAccionEnFormulario(a){
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.value = (v==null?'':v); };
+  const ced = a.cedula ? formatearCedula(a.cedula) : '';
+  set('apCedula', ced); set('apCedulaVal', ced);
+  set('apNombre', a.nombre); set('apDepartamento', a.direccion_departamento);
+  set('apSuperior', a.superior_inmediato); set('apSede', a.sede_trabajo);
+  set('apCargo', a.cargo); set('apSueldo', a.sueldo || '');
+  set('apFechaIngreso', a.fecha_ingreso ? isoFecha(a.fecha_ingreso) : '');
+  apSelected.clear();
+  document.querySelectorAll('#apNaturaleza input[data-ap-nat]').forEach(chk => {
+    const on = (a.naturaleza || []).includes(chk.dataset.apNat);
+    chk.checked = on;
+    chk.closest('.ap-nat-opt')?.classList.toggle('checked', on);
+    if(on) apSelected.add(chk.dataset.apNat);
+  });
+  set('apLicDesde', a.licencia_desde ? isoFecha(a.licencia_desde) : '');
+  set('apLicHasta', a.licencia_hasta ? isoFecha(a.licencia_hasta) : '');
+  set('apCambioArea', a.cambio_area_trabajo); set('apCambioSuperior', a.cambio_superior_inmediato);
+  set('apCambioSede', a.cambio_sede_trabajo); set('apCambioCargo', a.cambio_cargo_aprobado);
+  const selAum = document.getElementById('apCambioAplicaAumento'); if(selAum) selAum.value = a.cambio_aplica_aumento ? 'Sí' : 'No';
+  set('apCambioSalario', a.cambio_salario_aprobado || '');
+  set('apMotivacion', a.motivacion);
+  set('apFechaAccion', a.fecha_accion ? isoFecha(a.fecha_accion) : hoyISO());
+  apToggleSections();
+  previewAccion();
+}
+
+function editarAccionHistorial(id){
+  const a = (state.data.acciones || []).find(x => x.id === id);
+  if(!a) return toast('Acción no encontrada','error');
+  cargarAccionEnFormulario(a);
+  apEditId = id;
+  document.getElementById('btnGuardarAccion').textContent = 'Actualizar acción';
+  document.getElementById('btnCancelarEdicion').classList.remove('hidden');
+  document.querySelector('.ap-editor')?.scrollIntoView({ block:'start' });
+  toast('Editando acción existente. Modifica y pulsa "Actualizar acción".');
+}
+
+function cancelarEdicionAccion(){
+  apEditId = null;
+  document.getElementById('btnGuardarAccion').textContent = 'Guardar historial';
+  document.getElementById('btnCancelarEdicion').classList.add('hidden');
+}
+window.editarAccionHistorial = editarAccionHistorial;
 
 // Último día del mes anterior respecto a una fecha de referencia (o a hoy).
 function ultimoDiaMesAnterior(refISO){
@@ -638,6 +691,7 @@ document.getElementById('btnApMotivSalida').onclick=()=>{
 });
 document.getElementById('btnPreviewAccion').onclick=previewAccion;
 document.getElementById('btnGuardarAccion').onclick=guardarAccion;
+document.getElementById('btnCancelarEdicion').onclick=cancelarEdicionAccion;
 document.getElementById('btnPrintAccion').onclick=imprimirAccion;
 
 renderApNaturalezaInputs();
@@ -782,12 +836,22 @@ function accionNaturalezaLabels(a){
   return (a.naturaleza || []).map(k => AP_KEY2LABEL[k] || k).join(', ');
 }
 
+let apProfilesMap = {};
 async function cargarHistorialAcciones(){
   const { data, error } = await sb.from('acciones_personal')
     .select('*').order('created_at', { ascending:false }).limit(1000);
   if(error){ console.warn('No se pudo cargar el historial de acciones:', error.message); return; }
   state.data.acciones = data || [];
+  // Nombres de quienes registraron cada acción (para la columna "Registrada por").
+  try {
+    const { data: profs } = await sb.from('profiles').select('id, full_name, email');
+    apProfilesMap = {};
+    (profs || []).forEach(p => { apProfilesMap[p.id] = p.full_name || p.email || ''; });
+  } catch(_) {}
   renderHistorialAcciones();
+}
+function autorAccion(a){
+  return apProfilesMap[a.creado_por] || (a.creado_por ? '—' : '');
 }
 
 function renderHistorialAcciones(){
@@ -801,9 +865,13 @@ function renderHistorialAcciones(){
     <td><strong>${a.nombre || ''}</strong></td>
     <td>${a.cedula ? formatearCedula(a.cedula) : ''}</td>
     <td>${accionNaturalezaLabels(a)}</td>
+    <td>${autorAccion(a)}</td>
     <td>${mostrarFecha(a.created_at)}</td>
-    <td><button class="btn secondary" onclick="imprimirAccionHistorial('${a.id}')">Imprimir</button></td>
-  </tr>`).join('') || '<tr><td colspan="6">Aún no hay acciones registradas.</td></tr>';
+    <td class="ap-hist-acc">
+      <button class="btn secondary" onclick="editarAccionHistorial('${a.id}')">Editar</button>
+      <button class="btn secondary" onclick="imprimirAccionHistorial('${a.id}')">Imprimir</button>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="7">Aún no hay acciones registradas.</td></tr>';
 }
 
 // Pinta la hoja de vista previa a partir de una acción guardada (no de los inputs).
