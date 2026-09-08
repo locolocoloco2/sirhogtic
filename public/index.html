@@ -245,78 +245,88 @@
       </section>
 
       <section id="page-acciones" class="page">
-        <div class="cert-grid">
-          <div class="card">
-            <span class="eyebrow">Acciones de Personal</span>
-            <h2>Formulario de acción de personal</h2>
-
-            <label>Cédula del colaborador</label>
-            <div class="search-combo" data-target="apCedula">
-              <input id="apCedula" placeholder="Escribe cédula o nombre" autocomplete="off">
-              <div id="apCedulaResults" class="search-results hidden"></div>
+        <div class="ap-workspace">
+          <div class="ap-editor card">
+            <div class="ap-editor-head">
+              <span class="eyebrow">Acciones de Personal</span>
+              <h2>Formulario de acción de personal</h2>
+              <p class="muted">Completa los datos, marca la naturaleza de la acción y usa la vista previa para revisar e imprimir. La hoja se actualiza en tiempo real.</p>
             </div>
 
-            <h3 class="ap-form-sub">Datos personales</h3>
-            <label>Nombre</label><input id="apNombre" placeholder="Nombre completo">
-            <div class="grid-2">
-              <div><label>Cédula</label><input id="apCedulaVal" placeholder="000-0000000-0"></div>
-              <div><label>Fecha de ingreso</label><input id="apFechaIngreso" type="date"></div>
-            </div>
-            <label>Dirección / Departamento</label><input id="apDepartamento" placeholder="Dirección o departamento">
-            <div class="grid-2">
-              <div><label>Superior/a inmediato/a</label><input id="apSuperior" placeholder="Encargado del área"></div>
-              <div><label>Sede de trabajo</label><input id="apSede" placeholder="Oficina Principal"></div>
-            </div>
-            <div class="grid-2">
-              <div><label>Cargo</label><input id="apCargo" placeholder="Cargo actual"></div>
-              <div><label>Sueldo RD$</label><input id="apSueldo" type="number" step="0.01" placeholder="0.00"></div>
+            <div class="ap-section">
+              <h3 class="ap-form-sub">Colaborador</h3>
+              <div class="search-combo" data-target="apCedula">
+                <input id="apCedula" placeholder="Buscar por cédula o nombre…" autocomplete="off">
+                <div id="apCedulaResults" class="search-results hidden"></div>
+              </div>
             </div>
 
-            <h3 class="ap-form-sub">Naturaleza de la acción</h3>
-            <p class="muted ap-hint">Marca la casilla que corresponde. Las opciones de <strong>Cambio</strong> habilitan el cambio de datos laborales; las de <strong>Licencia</strong> habilitan el rango Desde–Hasta.</p>
-            <div id="apNaturaleza" class="ap-nat-grid"></div>
-            <div id="apLicenciaRango" class="grid-2 ap-licencia hidden">
-              <div><label>Licencia desde</label><input id="apLicDesde" type="date"></div>
-              <div><label>Licencia hasta</label><input id="apLicHasta" type="date"></div>
+            <div class="ap-section">
+              <h3 class="ap-form-sub">Datos personales</h3>
+              <div class="ap-fields">
+                <div class="fld fld-wide"><label>Nombre</label><input id="apNombre" placeholder="Nombre completo"></div>
+                <div class="fld"><label>Cédula</label><input id="apCedulaVal" placeholder="000-0000000-0"></div>
+                <div class="fld"><label>Fecha de ingreso</label><input id="apFechaIngreso" type="date"></div>
+                <div class="fld fld-wide"><label>Dirección / Departamento</label><input id="apDepartamento" placeholder="Dirección o departamento"></div>
+                <div class="fld"><label>Superior/a inmediato/a</label><input id="apSuperior" placeholder="Encargado del área"></div>
+                <div class="fld"><label>Sede de trabajo</label><input id="apSede" placeholder="Oficina Principal"></div>
+                <div class="fld"><label>Cargo</label><input id="apCargo" placeholder="Cargo actual"></div>
+                <div class="fld"><label>Sueldo RD$</label><input id="apSueldo" type="number" step="0.01" placeholder="0.00"></div>
+              </div>
             </div>
 
-            <div id="apCambioSection" class="ap-cambio hidden">
+            <div class="ap-section">
+              <h3 class="ap-form-sub">Naturaleza de la acción</h3>
+              <p class="muted ap-hint"><strong>Cambio</strong> habilita el cambio de datos laborales · <strong>Licencia</strong> habilita el rango Desde–Hasta.</p>
+              <div id="apNaturaleza" class="ap-nat-grid"></div>
+              <div id="apLicenciaRango" class="ap-fields ap-licencia hidden">
+                <div class="fld"><label>Licencia desde</label><input id="apLicDesde" type="date"></div>
+                <div class="fld"><label>Licencia hasta</label><input id="apLicHasta" type="date"></div>
+              </div>
+            </div>
+
+            <div id="apCambioSection" class="ap-section ap-cambio hidden">
               <h3 class="ap-form-sub">Cambio de datos laborales</h3>
-              <label>Área de trabajo</label><input id="apCambioArea" placeholder="Nueva área de trabajo">
-              <label>Superior/a inmediato/a</label><input id="apCambioSuperior" placeholder="Encargado del área">
-              <div class="grid-2">
-                <div><label>Sede de trabajo</label><input id="apCambioSede" placeholder="Sede aprobada"></div>
-                <div><label>Cargo aprobado</label><input id="apCambioCargo" placeholder="Nuevo cargo"></div>
+              <div class="ap-fields">
+                <div class="fld fld-wide"><label>Área de trabajo</label><input id="apCambioArea" placeholder="Nueva área de trabajo"></div>
+                <div class="fld fld-wide"><label>Superior/a inmediato/a</label><input id="apCambioSuperior" placeholder="Encargado del área"></div>
+                <div class="fld"><label>Sede de trabajo</label><input id="apCambioSede" placeholder="Sede aprobada"></div>
+                <div class="fld"><label>Cargo aprobado</label><input id="apCambioCargo" placeholder="Nuevo cargo"></div>
+                <div class="fld"><label>¿Aplica aumento de sueldo?</label><select id="apCambioAplicaAumento"><option value="No">No</option><option value="Sí">Sí</option></select></div>
+                <div class="fld"><label>Salario aprobado RD$</label><input id="apCambioSalario" type="number" step="0.01" placeholder="0.00"></div>
               </div>
-              <div class="grid-2">
-                <div><label>¿Aplica aumento de sueldo?</label>
-                  <select id="apCambioAplicaAumento"><option value="No">No</option><option value="Sí">Sí</option></select>
+            </div>
+
+            <div class="ap-section">
+              <h3 class="ap-form-sub">Información de la acción</h3>
+              <div class="ap-fields">
+                <div class="fld fld-full">
+                  <label>Motivación</label>
+                  <textarea id="apMotivacion" placeholder="Ej.: Efectivo al 01 de septiembre 2026"></textarea>
+                  <div class="ap-chip-row">
+                    <button id="btnApMotivIngreso" type="button" class="btn ghost-chip">Efectivo (ingreso)</button>
+                    <button id="btnApMotivSalida" type="button" class="btn ghost-chip">Efectivo (salida)</button>
+                  </div>
                 </div>
-                <div><label>Salario aprobado RD$</label><input id="apCambioSalario" type="number" step="0.01" placeholder="0.00"></div>
+                <div class="fld"><label>Fecha de la acción</label><input id="apFechaAccion" type="date"></div>
               </div>
             </div>
 
-            <h3 class="ap-form-sub">Información de la acción</h3>
-            <label>Motivación</label>
-            <textarea id="apMotivacion" placeholder="Ej.: Efectivo al 01 de septiembre 2026"></textarea>
-            <div class="actions" style="margin-top:8px">
-              <button id="btnApMotivIngreso" type="button" class="btn secondary ap-chip">Efectivo (ingreso)</button>
-              <button id="btnApMotivSalida" type="button" class="btn secondary ap-chip">Efectivo (salida)</button>
-            </div>
-            <label>Fecha de la acción</label><input id="apFechaAccion" type="date">
-
-            <div class="actions">
-              <button id="btnPreviewAccion" class="btn primary">Vista previa</button>
+            <div class="ap-actions">
+              <button id="btnPreviewAccion" class="btn primary">Actualizar vista previa</button>
               <button id="btnGuardarAccion" class="btn secondary">Guardar historial</button>
               <button id="btnPrintAccion" class="btn secondary">Imprimir</button>
+              <span id="apMsg" class="form-msg"></span>
             </div>
-            <p id="apMsg" class="form-msg"></p>
           </div>
 
-          <div class="card cert-preview-card">
-            <h2>Vista previa</h2>
-            <div class="cert-preview-shell">
-              <div class="cert-preview-stage">
+          <div class="ap-preview card">
+            <div class="ap-preview-head">
+              <h3>Vista previa</h3>
+              <span class="muted">Carta · 8.5 × 11 pulg.</span>
+            </div>
+            <div class="ap-preview-shell">
+              <div class="ap-preview-stage">
                 <div id="apPrintArea" class="ap-page">
                   <img class="ap-stripe" src="./assets/ogtic-stripe.png" alt="" aria-hidden="true" onerror="this.style.display='none'">
                   <div class="ap-header">

@@ -493,6 +493,7 @@ function renderApNaturalezaInputs(){
     chk.addEventListener('change', ()=>{
       const k = chk.dataset.apNat;
       if(chk.checked) apSelected.add(k); else apSelected.delete(k);
+      chk.closest('.ap-nat-opt')?.classList.toggle('checked', chk.checked);
       apToggleSections();
       previewAccion();
     });
