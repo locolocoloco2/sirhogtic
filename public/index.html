@@ -331,6 +331,7 @@
             <div class="ap-actions">
               <button id="btnPreviewAccion" class="btn primary">Actualizar vista previa</button>
               <button id="btnGuardarAccion" class="btn secondary">Guardar historial</button>
+              <button id="btnCancelarEdicion" type="button" class="btn secondary hidden">Cancelar edición</button>
               <button id="btnPrintAccion" class="btn secondary">Imprimir</button>
               <span id="apMsg" class="form-msg"></span>
             </div>
@@ -413,8 +414,10 @@
 
                   <table class="ap-table ap-firmas">
                     <tr><td class="ap-band" colspan="2">FIRMAS</td></tr>
-                    <tr><td class="ap-firma-space"></td><td class="ap-firma-space"></td></tr>
-                    <tr><td class="ap-firma-lbl" id="apvFirmaRrhh">Director/ a de Recursos Humanos</td><td class="ap-firma-lbl" id="apvFirmaGeneral">Director/a General</td></tr>
+                    <tr>
+                      <td class="ap-firma" id="apvFirmaRrhh">Director/ a de Recursos Humanos</td>
+                      <td class="ap-firma" id="apvFirmaGeneral">Director/a General</td>
+                    </tr>
                   </table>
                 </div>
               </div>
@@ -432,7 +435,7 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Fecha acción</th><th>Nombre</th><th>Cédula</th><th>Naturaleza</th><th>Registrada</th><th>Acción</th></tr></thead>
+                <thead><tr><th>Fecha acción</th><th>Nombre</th><th>Cédula</th><th>Naturaleza</th><th>Registrada por</th><th>Registrada</th><th>Acción</th></tr></thead>
                 <tbody id="apHistTable"></tbody>
               </table>
             </div>
