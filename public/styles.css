@@ -767,17 +767,19 @@ body {
 @media(max-width:560px){.ap-nat-grid{grid-template-columns:1fr}}
 
 /* Página imprimible (8.5x11) del formulario */
-.ap-page{width:8.5in;height:11in;background:#fff;position:relative;box-shadow:0 15px 40px rgba(0,0,0,.16);font-family:'Poppins',sans-serif;color:#1a1a1a;flex:0 0 auto;padding:.32in .5in .3in .5in;overflow:hidden}
-.ap-page .ap-stripe{position:absolute;top:0;right:0;height:100%;width:.26in;object-fit:cover;object-position:right top;z-index:0;pointer-events:none}
-.ap-header{position:relative;z-index:1;display:flex;align-items:center;margin-bottom:.08in}
-.ap-header .ap-logo{height:.62in;width:auto;max-width:3.3in;object-fit:contain}
-.ap-doc-title{position:relative;z-index:1;background:#002060;color:#fff;text-align:center;font-weight:700;font-size:11pt;letter-spacing:.01em;padding:6px 0;border-radius:2px;margin-bottom:.06in}
+.ap-page{width:8.5in;height:11in;background:#fff;position:relative;box-shadow:0 15px 40px rgba(0,0,0,.16);font-family:'Poppins',sans-serif;color:#1a1a1a;flex:0 0 auto;padding:.3in .4in .3in .55in;overflow:hidden}
+.ap-page .ap-stripe{position:absolute;top:0;left:0;height:100%;width:.2in;object-fit:cover;object-position:left top;z-index:0;pointer-events:none}
+.ap-header{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:.06in}
+.ap-header .ap-logo{height:.6in;width:auto;max-width:3in;object-fit:contain}
+.ap-meta{text-align:right;font-size:6.6pt;line-height:1.35;color:#1a1a1a}
+.ap-meta-title{font-weight:700;font-size:8pt;margin-bottom:1pt}
+.ap-doc-title{position:relative;z-index:1;background:#002060;color:#fff;text-align:left;font-weight:700;font-size:9.5pt;letter-spacing:.01em;padding:4pt 8pt;margin-bottom:.04in;text-transform:uppercase}
 .ap-table{position:relative;z-index:1;width:100%!important;border-collapse:collapse;min-width:0!important;table-layout:fixed;margin-bottom:.05in}
-.ap-table td{border:.75pt solid #000;padding:2.5pt 5pt;font-size:7.6pt;line-height:1.28;vertical-align:top;word-wrap:break-word}
-.ap-band{background:#808080;color:#fff;font-weight:700;text-align:center;text-transform:uppercase;font-size:7.8pt;letter-spacing:.02em;padding:3.5pt 0!important}
-.ap-lbl{background:#f0f0f0;font-weight:600;width:1.85in}
-.ap-val{font-weight:500}
-.ap-nat-head td{background:#808080;color:#fff;font-weight:700;text-align:center;font-size:7.4pt;width:25%}
+.ap-table td{border:.5pt solid #b9b9b9;padding:2.5pt 5pt;font-size:7.6pt;line-height:1.28;vertical-align:top;word-wrap:break-word;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;max-width:none!important}
+.ap-band{background:#808080;color:#fff;font-weight:700;text-align:left;text-transform:uppercase;font-size:7.6pt;letter-spacing:.01em;padding:3pt 8pt!important}
+.ap-lbl{background:#fff;font-weight:600;width:2in}
+.ap-val{font-weight:400}
+.ap-nat-head td{background:#fff;color:#1a1a1a;font-weight:700;text-align:left;font-size:7.4pt;width:25%}
 .ap-nat-body td{font-size:7.2pt;line-height:1.5;padding:4pt 5pt}
 .ap-nat-body span{display:block;margin:1pt 0}
 .ap-nat-body .on{font-weight:700}

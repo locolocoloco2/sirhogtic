@@ -639,13 +639,20 @@ async function guardarAccion(){
   toast('Acción de personal guardada en el historial');
 }
 
+// Último día del mes anterior respecto a una fecha de referencia (o a hoy).
+function ultimoDiaMesAnterior(refISO){
+  const r = parseFecha(refISO) || parseFecha(hoyISO());
+  return isoFecha(new Date(r.getFullYear(), r.getMonth(), 0));
+}
 document.getElementById('btnApMotivIngreso').onclick=()=>{
   const f = fechaLargaCertificacion(document.getElementById('apFechaIngreso').value);
   document.getElementById('apMotivacion').value = f ? `Efectivo al ${f}` : 'Efectivo al ';
   previewAccion();
 };
 document.getElementById('btnApMotivSalida').onclick=()=>{
-  const f = fechaLargaCertificacion(document.getElementById('apFechaAccion').value);
+  // Salida: por defecto el último día del mes anterior (editable en el texto).
+  const iso = ultimoDiaMesAnterior(document.getElementById('apFechaAccion').value);
+  const f = fechaLargaCertificacion(iso);
   document.getElementById('apMotivacion').value = f ? `Efectivo al ${f}` : 'Efectivo al ';
   previewAccion();
 };
