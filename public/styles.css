@@ -775,6 +775,15 @@ body {
 .ap-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
 .ap-actions .form-msg{margin-left:auto}
 
+/* --- Carga masiva --- */
+.ap-bulk-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
+.ap-file{display:flex;flex-direction:column;gap:6px;font-weight:700;color:#40556f;font-size:.85rem;flex:1 1 240px;min-width:0}
+.ap-file input{font-weight:400}
+.ap-bulk-result{margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:#fbfdff;font-size:.9rem}
+.ap-bulk-result h4{margin:0 0 8px;color:var(--navy)}
+.ap-bulk-result ul{margin:8px 0 0;padding-left:18px}
+.ap-bulk-result .err{color:var(--red)}
+
 /* --- Matriz de naturaleza (captura) --- */
 .ap-nat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media(max-width:1000px){.ap-nat-grid{grid-template-columns:repeat(2,1fr)}}
@@ -823,14 +832,21 @@ body {
 .ap-2col-cambio col:nth-child(3){width:19%}
 .ap-2col-cambio col:nth-child(4){width:25%}
 
-/* Escalado de la vista previa en pantallas pequeñas (igual criterio que certificaciones) */
-@media(max-width:1200px){.ap-page{transform:scale(.82);transform-origin:top left}}
-@media(max-width:1020px){.ap-page{transform:scale(.72);transform-origin:top left}}
-@media(max-width:760px){.ap-page{transform:scale(.52);transform-origin:top left}}
-@media(max-width:480px){.ap-page{transform:scale(.38);transform-origin:top left}}
+/* Escalado de la vista previa SOLO en pantalla (nunca en impresión). */
+@media screen and (max-width:1200px){.ap-page{transform:scale(.82);transform-origin:top left}}
+@media screen and (max-width:1020px){.ap-page{transform:scale(.72);transform-origin:top left}}
+@media screen and (max-width:760px){.ap-page{transform:scale(.52);transform-origin:top left}}
+@media screen and (max-width:480px){.ap-page{transform:scale(.38);transform-origin:top left}}
 
+/* Impresión de la Acción de Personal: aísla la hoja tal cual la vista previa. */
 @media print{
   body *{visibility:hidden!important}
   #apPrintArea,#apPrintArea *{visibility:visible!important}
-  #apPrintArea{position:fixed!important;left:0!important;top:0!important;width:8.5in!important;height:11in!important;margin:0!important;box-shadow:none!important;transform:none!important;page-break-after:avoid!important;break-after:avoid-page!important}
+  #apPrintArea{position:fixed!important;left:0!important;top:0!important;width:8.5in!important;height:11in!important;margin:0!important;box-shadow:none!important;transform:none!important;overflow:hidden!important;page-break-after:avoid!important;break-after:avoid-page!important}
+  /* Los valores nunca en azul (evita autodetección de enlaces/teléfono al imprimir). */
+  #apPrintArea .ap-val,#apPrintArea .ap-lbl,#apPrintArea .ap-nat-head td,#apPrintArea .ap-nat-body td,#apPrintArea .ap-firma-lbl,#apPrintArea .ap-meta{color:#1a1a1a!important;-webkit-text-fill-color:#1a1a1a!important}
+  /* Bandas conservan su texto blanco. */
+  #apPrintArea .ap-band,#apPrintArea .ap-doc-title{color:#fff!important;-webkit-text-fill-color:#fff!important}
+  /* Imprimir fondos (bandas grises/azul y franja). */
+  #apPrintArea,#apPrintArea *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }
