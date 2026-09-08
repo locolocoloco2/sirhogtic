@@ -50,6 +50,7 @@ function renderDatalist(){
   setupEmployeeSearch('buscarCedula');
   setupEmployeeSearch('solCedula');
   setupEmployeeSearch('certCedula');
+  setupEmployeeSearch('apCedula');
 }
 
 function empleadoSearchText(e){
@@ -106,6 +107,7 @@ function setupEmployeeSearch(inputId){
 
     if(inputId === 'buscarCedula') consultarEmpleado();
     if(inputId === 'certCedula') previewCert();
+    if(inputId === 'apCedula') autofillAccion();
   });
 
   document.addEventListener('click', ev => {
@@ -434,6 +436,232 @@ document.getElementById('btnGuardarCert').onclick=guardarCert;
 document.getElementById('btnPrintCert').onclick=imprimirCertificacion;
 document.getElementById('btnExportBackup').onclick=exportBackup;
 document.getElementById('btnTicketEmpleado').onclick=()=>{document.querySelector('[data-page="tickets"]').click(); document.getElementById('ticketCedula').value=document.getElementById('buscarCedula').value;};
+
+/* =========================================================
+   Acciones de Personal (Formulario de Acción de Personal)
+   ========================================================= */
+const AP_NATURALEZA = [
+  { grupo:'Designación', cell:'apvNatDesignacion', items:[
+    ['nombramiento_ordinario','Nombramiento ordinario'],
+    ['contrato_temporal','Por contrato temporal'],
+    ['sustitucion','Sustitución'],
+    ['reingreso','Re- ingreso'],
+    ['asignacion','Asignación'],
+    ['periodo_prueba','Periodo de prueba'],
+    ['transitorio','Transitorio'],
+  ]},
+  { grupo:'Cambio', cell:'apvNatCambio', items:[
+    ['ascenso','Ascenso'],
+    ['reclasificacion','Reclasificación'],
+    ['aumento_sueldo','Aumento de sueldo'],
+    ['traslado','Traslado'],
+    ['ajuste_salarial','Ajuste salarial'],
+    ['promocion','Promoción'],
+  ]},
+  { grupo:'Licencia', cell:'apvNatLicencia', items:[
+    ['con_sueldo','Con sueldo'],
+    ['sin_sueldo','Sin sueldo'],
+    ['por_enfermedad','Por enfermedad'],
+    ['por_maternidad','Por maternidad'],
+    ['estudio_con_sueldo','Por estudio con sueldo'],
+    ['estudio_sin_sueldo','Por estudio sin sueldo'],
+  ]},
+  { grupo:'Separación del servicio', cell:'apvNatSeparacion', items:[
+    ['renuncia','Renuncia'],
+    ['terminacion_contrato','Terminación de contrato'],
+    ['suspension_cargo','Suspensión de cargo'],
+    ['abandono_cargo','Abandono de cargo'],
+    ['fallecimiento','Fallecimiento'],
+    ['destitucion_cargo','Destitución de cargo'],
+  ]},
+];
+const AP_CAMBIO_KEYS = new Set(AP_NATURALEZA[1].items.map(i=>i[0]));
+const AP_LICENCIA_KEYS = new Set(AP_NATURALEZA[2].items.map(i=>i[0]));
+const apSelected = new Set();
+
+function renderApNaturalezaInputs(){
+  const cont = document.getElementById('apNaturaleza');
+  if(!cont) return;
+  cont.innerHTML = AP_NATURALEZA.map(g=>`
+    <div class="ap-nat-col">
+      <h4>${g.grupo}</h4>
+      ${g.items.map(([k,label])=>`
+        <label class="ap-nat-opt"><input type="checkbox" data-ap-nat="${k}"> <span>${label}</span></label>
+      `).join('')}
+    </div>`).join('');
+  cont.querySelectorAll('input[data-ap-nat]').forEach(chk=>{
+    chk.addEventListener('change', ()=>{
+      const k = chk.dataset.apNat;
+      if(chk.checked) apSelected.add(k); else apSelected.delete(k);
+      apToggleSections();
+      previewAccion();
+    });
+  });
+}
+
+function apToggleSections(){
+  const hayCambio = [...apSelected].some(k=>AP_CAMBIO_KEYS.has(k));
+  const hayLicencia = [...apSelected].some(k=>AP_LICENCIA_KEYS.has(k));
+  document.getElementById('apCambioSection').classList.toggle('hidden', !hayCambio);
+  document.getElementById('apLicenciaRango').classList.toggle('hidden', !hayLicencia);
+}
+
+function autofillAccion(){
+  const e = findEmp(document.getElementById('apCedulaVal').value || document.getElementById('apCedula').value);
+  if(!e){ toast('Colaborador no encontrado','error'); return; }
+  document.getElementById('apNombre').value = e.nombre || '';
+  document.getElementById('apCedulaVal').value = formatearCedula(e.cedula);
+  document.getElementById('apCedula').value = formatearCedula(e.cedula);
+  document.getElementById('apDepartamento').value = e.departamento || '';
+  document.getElementById('apCargo').value = e.cargo || '';
+  document.getElementById('apSueldo').value = e.sueldo || '';
+  document.getElementById('apFechaIngreso').value = isoFecha(e.fecha_ingreso) || '';
+  if(!document.getElementById('apSuperior').value) document.getElementById('apSuperior').value = 'Encargado del área';
+  previewAccion();
+}
+
+function apCheckbox(marcado, label){
+  return `<span class="${marcado?'on':''}">${marcado?'☒':'☐'} ${label}</span>`;
+}
+
+function setText(id, val){ const el=document.getElementById(id); if(el) el.textContent = val || ''; }
+function setHtml(id, val){ const el=document.getElementById(id); if(el) el.innerHTML = val || ''; }
+
+function previewAccion(){
+  const sueldo = Number(document.getElementById('apSueldo').value||0);
+  setText('apvNombre', document.getElementById('apNombre').value);
+  setText('apvCedula', document.getElementById('apCedulaVal').value);
+  setText('apvDepartamento', document.getElementById('apDepartamento').value);
+  setText('apvSuperior', document.getElementById('apSuperior').value);
+  setText('apvSede', document.getElementById('apSede').value);
+  setText('apvCargo', document.getElementById('apCargo').value);
+  setText('apvFechaIngreso', mostrarFecha(document.getElementById('apFechaIngreso').value));
+  setText('apvSueldo', sueldo ? money(sueldo) : '');
+
+  // Naturaleza: cada columna con sus casillas ☒/☐
+  AP_NATURALEZA.forEach(g=>{
+    let html = g.items.map(([k,label])=>apCheckbox(apSelected.has(k), label)).join('');
+    if(g.grupo === 'Licencia'){
+      const d1 = mostrarFecha(document.getElementById('apLicDesde').value);
+      const d2 = mostrarFecha(document.getElementById('apLicHasta').value);
+      const rango = (d1 || d2) ? `${d1||'____'} - ${d2||'____'}` : '';
+      html += `<span class="ap-nat-rango">Desde- Hasta: ${rango}</span>`;
+    }
+    setHtml(g.cell, html);
+  });
+
+  // Cambio de datos laborales
+  const aplica = document.getElementById('apCambioAplicaAumento').value;
+  const salAprob = Number(document.getElementById('apCambioSalario').value||0);
+  setText('apvCambioArea', document.getElementById('apCambioArea').value);
+  setText('apvCambioSuperior', document.getElementById('apCambioSuperior').value);
+  setText('apvCambioSede', document.getElementById('apCambioSede').value);
+  setText('apvCambioCargo', document.getElementById('apCambioCargo').value);
+  setText('apvCambioAumento', document.getElementById('apCambioSection').classList.contains('hidden') ? '' : aplica);
+  setText('apvCambioSalario', salAprob ? money(salAprob) : '');
+
+  // Información
+  setText('apvMotivacion', document.getElementById('apMotivacion').value);
+  setText('apvFechaAccion', mostrarFecha(document.getElementById('apFechaAccion').value));
+  return true;
+}
+
+function printNodeInIframe(node, title){
+  if(!node) return;
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden','true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0';
+  document.body.appendChild(iframe);
+
+  const baseUrl = window.location.href.replace(/[^/]*$/, '');
+  const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+    .map(n => n.outerHTML).join('\n');
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="${baseUrl}"><title>${title}</title>${styles}
+  <style>
+    @page{size:letter;margin:0}
+    html,body{width:8.5in!important;height:11in!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important}
+    body{display:block!important}
+    #apPrintArea,.ap-page{position:fixed!important;left:0!important;top:0!important;width:8.5in!important;height:11in!important;margin:0!important;transform:none!important;box-shadow:none!important;overflow:hidden!important}
+    #apPrintArea *,.ap-page *{visibility:visible!important}
+  </style></head><body>${node.outerHTML}</body></html>`);
+  doc.close();
+
+  const printNow = () => { const w=iframe.contentWindow; w.focus(); w.print(); setTimeout(()=>iframe.remove(),1500); };
+  (async ()=>{
+    const imgs = Array.from(doc.images);
+    await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise(r=>{img.onload=r; img.onerror=r;})));
+    if(doc.fonts && doc.fonts.ready){ try{ await doc.fonts.ready; }catch(_){} }
+    setTimeout(printNow, 150);
+  })();
+}
+
+function imprimirAccion(){
+  previewAccion();
+  printNodeInIframe(document.getElementById('apPrintArea'), 'Acción de Personal');
+}
+
+async function guardarAccion(){
+  if(apSelected.size === 0) return toast('Marca al menos una naturaleza de la acción','error');
+  const fechaAccion = document.getElementById('apFechaAccion').value;
+  if(!fechaAccion) return toast('Indica la fecha de la acción','error');
+  const nombre = document.getElementById('apNombre').value.trim();
+  if(!nombre) return toast('Indica el nombre del colaborador','error');
+
+  const e = findEmp(document.getElementById('apCedulaVal').value);
+  const hayCambio = !document.getElementById('apCambioSection').classList.contains('hidden');
+  const payload = {
+    empleado_id: e ? e.id : null,
+    nombre,
+    cedula: normalizarCedula(document.getElementById('apCedulaVal').value) || null,
+    direccion_departamento: document.getElementById('apDepartamento').value || null,
+    superior_inmediato: document.getElementById('apSuperior').value || null,
+    sede_trabajo: document.getElementById('apSede').value || null,
+    cargo: document.getElementById('apCargo').value || null,
+    fecha_ingreso: isoFecha(document.getElementById('apFechaIngreso').value) || null,
+    sueldo: Number(document.getElementById('apSueldo').value||0),
+    naturaleza: Array.from(apSelected),
+    licencia_desde: isoFecha(document.getElementById('apLicDesde').value) || null,
+    licencia_hasta: isoFecha(document.getElementById('apLicHasta').value) || null,
+    cambio_area_trabajo: hayCambio ? (document.getElementById('apCambioArea').value || null) : null,
+    cambio_superior_inmediato: hayCambio ? (document.getElementById('apCambioSuperior').value || null) : null,
+    cambio_sede_trabajo: hayCambio ? (document.getElementById('apCambioSede').value || null) : null,
+    cambio_cargo_aprobado: hayCambio ? (document.getElementById('apCambioCargo').value || null) : null,
+    cambio_aplica_aumento: hayCambio && document.getElementById('apCambioAplicaAumento').value === 'Sí',
+    cambio_salario_aprobado: hayCambio ? (Number(document.getElementById('apCambioSalario').value||0) || null) : null,
+    motivacion: document.getElementById('apMotivacion').value || null,
+    fecha_accion: fechaAccion
+  };
+  const {error} = await Api.insert('acciones_personal', payload);
+  if(error) return toast(error.message,'error');
+  toast('Acción de personal guardada en el historial');
+}
+
+document.getElementById('btnApMotivIngreso').onclick=()=>{
+  const f = fechaLargaCertificacion(document.getElementById('apFechaIngreso').value);
+  document.getElementById('apMotivacion').value = f ? `Efectivo al ${f}` : 'Efectivo al ';
+  previewAccion();
+};
+document.getElementById('btnApMotivSalida').onclick=()=>{
+  const f = fechaLargaCertificacion(document.getElementById('apFechaAccion').value);
+  document.getElementById('apMotivacion').value = f ? `Efectivo al ${f}` : 'Efectivo al ';
+  previewAccion();
+};
+['apNombre','apCedulaVal','apDepartamento','apSuperior','apSede','apCargo','apSueldo','apFechaIngreso',
+ 'apLicDesde','apLicHasta','apCambioArea','apCambioSuperior','apCambioSede','apCambioCargo',
+ 'apCambioAplicaAumento','apCambioSalario','apMotivacion','apFechaAccion'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', previewAccion);
+});
+document.getElementById('btnPreviewAccion').onclick=previewAccion;
+document.getElementById('btnGuardarAccion').onclick=guardarAccion;
+document.getElementById('btnPrintAccion').onclick=imprimirAccion;
+
+renderApNaturalezaInputs();
+document.getElementById('apFechaAccion').value = hoyISO();
+previewAccion();
 
 async function boot(){ const {data:{session}}=await sb.auth.getSession(); if(!session)return; state.profile=await Api.profile(); document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); await loadData(); }
 boot();
