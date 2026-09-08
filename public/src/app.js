@@ -530,6 +530,22 @@ function apCheckbox(marcado, label){
 function setText(id, val){ const el=document.getElementById(id); if(el) el.textContent = val || ''; }
 function setHtml(id, val){ const el=document.getElementById(id); if(el) el.innerHTML = val || ''; }
 
+// Garantiza que TODO el formulario quepa en una sola pagina: si el contenido
+// excede el alto de la hoja, reduce apenas lo necesario (sin recortar nada).
+function ajustarEscalaHoja(){
+  const body = document.querySelector('#apPrintArea .ap-body');
+  if(!body) return;
+  body.style.transform = 'none';
+  body.style.width = '';
+  const disp = body.clientHeight;          // alto disponible en la hoja
+  const need = body.scrollHeight;           // alto real del contenido
+  if(disp > 0 && need > disp + 1){
+    const s = Math.max(0.5, disp / need);
+    body.style.width = (100 / s) + '%';      // compensa el ancho al escalar
+    body.style.transform = 'scale(' + s + ')';
+  }
+}
+
 function previewAccion(){
   const sueldo = Number(document.getElementById('apSueldo').value||0);
   setText('apvNombre', document.getElementById('apNombre').value);
@@ -566,6 +582,7 @@ function previewAccion(){
   // Información
   setText('apvMotivacion', document.getElementById('apMotivacion').value);
   setText('apvFechaAccion', mostrarFecha(document.getElementById('apFechaAccion').value));
+  ajustarEscalaHoja();
   return true;
 }
 
@@ -906,6 +923,7 @@ function pintarPreviewDesdeAccion(a){
   setText('apvCambioSalario', a.cambio_salario_aprobado ? money(a.cambio_salario_aprobado) : '');
   setText('apvMotivacion', a.motivacion || '');
   setText('apvFechaAccion', a.fecha_accion ? mostrarFecha(a.fecha_accion) : '');
+  ajustarEscalaHoja();
 }
 
 function imprimirAccionHistorial(id){
