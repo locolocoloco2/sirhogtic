@@ -567,41 +567,12 @@ function previewAccion(){
   return true;
 }
 
-function printNodeInIframe(node, title){
-  if(!node) return;
-  const iframe = document.createElement('iframe');
-  iframe.setAttribute('aria-hidden','true');
-  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0';
-  document.body.appendChild(iframe);
-
-  const baseUrl = window.location.href.replace(/[^/]*$/, '');
-  const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-    .map(n => n.outerHTML).join('\n');
-
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-  doc.open();
-  doc.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="${baseUrl}"><title>${title}</title>${styles}
-  <style>
-    @page{size:letter;margin:0}
-    html,body{width:8.5in!important;height:11in!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important}
-    body{display:block!important}
-    #apPrintArea,.ap-page{position:fixed!important;left:0!important;top:0!important;width:8.5in!important;height:11in!important;margin:0!important;transform:none!important;box-shadow:none!important;overflow:hidden!important}
-    #apPrintArea *,.ap-page *{visibility:visible!important}
-  </style></head><body>${node.outerHTML}</body></html>`);
-  doc.close();
-
-  const printNow = () => { const w=iframe.contentWindow; w.focus(); w.print(); setTimeout(()=>iframe.remove(),1500); };
-  (async ()=>{
-    const imgs = Array.from(doc.images);
-    await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise(r=>{img.onload=r; img.onerror=r;})));
-    if(doc.fonts && doc.fonts.ready){ try{ await doc.fonts.ready; }catch(_){} }
-    setTimeout(printNow, 150);
-  })();
-}
-
 function imprimirAccion(){
+  // Imprime EXACTAMENTE la vista previa (mismo DOM y estilos); las reglas
+  // @media print aíslan la hoja. Antes se usaba un iframe que reescalaba y
+  // recoloreaba el contenido; la impresión directa evita esas diferencias.
   previewAccion();
-  printNodeInIframe(document.getElementById('apPrintArea'), 'Acción de Personal');
+  window.print();
 }
 
 async function guardarAccion(){
@@ -670,6 +641,135 @@ document.getElementById('btnPrintAccion').onclick=imprimirAccion;
 renderApNaturalezaInputs();
 document.getElementById('apFechaAccion').value = hoyISO();
 previewAccion();
+
+/* ---------- Carga masiva de acciones por plantilla ---------- */
+function apNormalizaTexto(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+// Mapa etiqueta/clave -> clave, para reconocer la naturaleza escrita en la plantilla.
+const AP_LABEL2KEY = {};
+AP_NATURALEZA.forEach(g => g.items.forEach(([k,label]) => {
+  AP_LABEL2KEY[apNormalizaTexto(label)] = k;
+  AP_LABEL2KEY[apNormalizaTexto(k)] = k;
+}));
+function apParseNaturaleza(txt){
+  return String(txt||'').split(/[,;/|]+/).map(t => AP_LABEL2KEY[apNormalizaTexto(t)]).filter(Boolean);
+}
+
+const AP_PLANTILLA_HEADERS = [
+  'Cédula','Nombre','Dirección/Departamento','Superior inmediato','Sede de trabajo','Cargo','Sueldo','Fecha de ingreso',
+  'Naturaleza','Licencia desde','Licencia hasta',
+  'Cambio - Área de trabajo','Cambio - Superior inmediato','Cambio - Sede de trabajo','Cargo aprobado','¿Aplica aumento? (Sí/No)','Salario aprobado',
+  'Motivación','Fecha de la acción'
+];
+
+function plantillaAccionesExcel(){
+  const ejemplos = [
+    ['018-0044804-3','Nelson Elias Mota Espinosa','Dirección Administrativa y Financiera','Encargado del área','Punto GOB Sambil','Auxiliar Servicios Generales',30000,'01/09/2026','Nombramiento ordinario','','','','','','','No','','Efectivo al 01 de septiembre 2026','07/09/2026'],
+    ['104-0015016-4','Demetrio Bens Turbi','Departamento de Seguridad','Encargado del área','Oficina Principal','Seguridad',15000,'01/04/2022','Destitución de cargo','','','','','','','No','','Efectivo al 31 de agosto 2026','07/09/2026'],
+    ['001-1259534-3','Elpidio de Jesús West Batista','Dirección de Transformación Digital Gubernamental','Encargado de área','Oficina Principal','Analista de Datos',60000,'01/01/2015','Promoción','','','Dirección de Transformación Digital Gubernamental','Encargado de área','Oficina Principal','Analista de Estándares y Normativas','Sí',80000,'Efectivo al 01 de septiembre 2026','07/09/2026']
+  ];
+  const ws = XLSX.utils.aoa_to_sheet([AP_PLANTILLA_HEADERS, ...ejemplos]);
+  ws['!cols'] = AP_PLANTILLA_HEADERS.map(() => ({ wch: 22 }));
+
+  // Hoja de referencia con las naturalezas válidas (escríbelas tal cual en la columna Naturaleza).
+  const ref = [['Grupo','Naturaleza (escríbela tal cual)']];
+  AP_NATURALEZA.forEach(g => g.items.forEach(([,label]) => ref.push([g.grupo, label])));
+  const wsRef = XLSX.utils.aoa_to_sheet(ref);
+  wsRef['!cols'] = [{ wch: 22 }, { wch: 30 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Acciones');
+  XLSX.utils.book_append_sheet(wb, wsRef, 'Naturalezas válidas');
+  XLSX.writeFile(wb, 'plantilla_acciones_personal.xlsx');
+}
+
+let apBulkWb = null;
+function apBulkArchivoSeleccionado(e){
+  const file = e.target.files[0];
+  if(!file){ apBulkWb = null; return; }
+  const r = new FileReader();
+  r.onload = ev => {
+    apBulkWb = XLSX.read(new Uint8Array(ev.target.result), { type:'array', cellDates:true });
+    document.getElementById('apBulkMsg').textContent = `Archivo listo: ${file.name}. Pulsa "Procesar archivo".`;
+  };
+  r.readAsArrayBuffer(file);
+}
+
+async function procesarAccionesMasivo(){
+  if(!apBulkWb) return toast('Carga primero un archivo Excel','error');
+  const hoja = apBulkWb.SheetNames.find(n => apNormalizaTexto(n) === 'acciones') || apBulkWb.SheetNames[0];
+  const rows = XLSX.utils.sheet_to_json(apBulkWb.Sheets[hoja], { defval:'', raw:false });
+
+  const payloads = [];
+  const errores = [];
+
+  rows.forEach((r, idx) => {
+    const fila = idx + 2; // fila real en Excel (1 = encabezado)
+    const nombre = String(rowVal(r, ['nombre'])).trim();
+    const cedRaw = rowVal(r, ['cedula','cédula']);
+    if(!nombre && !String(cedRaw).trim()) return; // fila vacía, se ignora
+
+    const fechaAccion = isoFecha(rowVal(r, ['fecha de la accion','fecha de la acción','fecha accion']));
+    if(!nombre){ errores.push(`Fila ${fila}: falta el Nombre.`); return; }
+    if(!fechaAccion){ errores.push(`Fila ${fila}: falta la Fecha de la acción.`); return; }
+
+    const ced = normalizarCedula(cedRaw);
+    const emp = ced ? findEmp(ced) : null;
+    const naturaleza = apParseNaturaleza(rowVal(r, ['naturaleza']));
+    if(!naturaleza.length){ errores.push(`Fila ${fila}: la Naturaleza no coincide con ninguna válida (ver hoja "Naturalezas válidas").`); return; }
+
+    const aplica = /^s/i.test(String(rowVal(r, ['aplica aumento (si/no)','aplica aumento','aplica aumento sino'])).trim());
+    const salAprob = Number(String(rowVal(r, ['salario aprobado'])).replace(/[RD$,\s]/g,'')) || null;
+
+    payloads.push({
+      empleado_id: emp ? emp.id : null,
+      nombre,
+      cedula: ced || null,
+      direccion_departamento: String(rowVal(r, ['direccion/departamento','dirección/departamento','departamento'])).trim() || null,
+      superior_inmediato: String(rowVal(r, ['superior inmediato','superior/a inmediato/a'])).trim() || null,
+      sede_trabajo: String(rowVal(r, ['sede de trabajo'])).trim() || null,
+      cargo: String(rowVal(r, ['cargo'])).trim() || null,
+      fecha_ingreso: isoFecha(rowVal(r, ['fecha de ingreso'])) || null,
+      sueldo: Number(String(rowVal(r, ['sueldo','salario'])).replace(/[RD$,\s]/g,'')) || 0,
+      naturaleza,
+      licencia_desde: isoFecha(rowVal(r, ['licencia desde'])) || null,
+      licencia_hasta: isoFecha(rowVal(r, ['licencia hasta'])) || null,
+      cambio_area_trabajo: String(rowVal(r, ['cambio - area de trabajo','cambio - área de trabajo','area de trabajo'])).trim() || null,
+      cambio_superior_inmediato: String(rowVal(r, ['cambio - superior inmediato'])).trim() || null,
+      cambio_sede_trabajo: String(rowVal(r, ['cambio - sede de trabajo'])).trim() || null,
+      cambio_cargo_aprobado: String(rowVal(r, ['cargo aprobado'])).trim() || null,
+      cambio_aplica_aumento: aplica,
+      cambio_salario_aprobado: salAprob,
+      motivacion: String(rowVal(r, ['motivacion','motivación'])).trim() || null,
+      fecha_accion: fechaAccion
+    });
+  });
+
+  const result = document.getElementById('apBulkResult');
+  result.classList.remove('hidden');
+
+  if(!payloads.length){
+    result.innerHTML = `<h4>No se registró ninguna acción</h4>${errores.length ? `<ul>${errores.map(e=>`<li class="err">${e}</li>`).join('')}</ul>` : '<p class="muted">El archivo no tenía filas válidas.</p>'}`;
+    return;
+  }
+
+  document.getElementById('apBulkMsg').textContent = `Registrando ${payloads.length} acción(es)...`;
+  const { data, error } = await sb.from('acciones_personal').insert(payloads).select();
+  if(error){
+    result.innerHTML = `<h4 class="err">Error al guardar</h4><p class="err">${error.message}</p>`;
+    return;
+  }
+
+  document.getElementById('apBulkMsg').textContent = '';
+  result.innerHTML = `<h4>Se registraron ${data.length} acción(es) en el historial ✔</h4>` +
+    (errores.length ? `<p>Filas omitidas (${errores.length}):</p><ul>${errores.map(e=>`<li class="err">${e}</li>`).join('')}</ul>` : '');
+  toast(`Carga masiva: ${data.length} acción(es) creada(s)`);
+}
+
+document.getElementById('btnApPlantilla').onclick = plantillaAccionesExcel;
+document.getElementById('apBulkFile').addEventListener('change', apBulkArchivoSeleccionado);
+document.getElementById('btnApBulkProcesar').onclick = procesarAccionesMasivo;
 
 async function boot(){ const {data:{session}}=await sb.auth.getSession(); if(!session)return; state.profile=await Api.profile(); document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); await loadData(); }
 boot();

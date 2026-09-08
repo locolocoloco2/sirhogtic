@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="format-detection" content="telephone=no" />
   <title>OGTIC · RRHH Cloud</title>
   <link rel="stylesheet" href="./styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -246,6 +247,21 @@
 
       <section id="page-acciones" class="page">
         <div class="ap-workspace">
+          <div class="ap-bulk card">
+            <div class="ap-editor-head">
+              <span class="eyebrow">Carga masiva</span>
+              <h2>Crear acciones desde una plantilla</h2>
+              <p class="muted">Descarga la plantilla, completa <strong>una fila por acción</strong> (todos los conceptos: ingresos, salidas, promociones, etc.) y cárgala para registrarlas todas de una sola vez en el historial.</p>
+            </div>
+            <div class="ap-bulk-row">
+              <button id="btnApPlantilla" type="button" class="btn secondary">Descargar plantilla</button>
+              <label class="ap-file"><span>Archivo Excel</span><input id="apBulkFile" type="file" accept=".xlsx,.xls"></label>
+              <button id="btnApBulkProcesar" type="button" class="btn primary">Procesar archivo</button>
+            </div>
+            <p id="apBulkMsg" class="form-msg"></p>
+            <div id="apBulkResult" class="ap-bulk-result hidden"></div>
+          </div>
+
           <div class="ap-editor card">
             <div class="ap-editor-head">
               <span class="eyebrow">Acciones de Personal</span>
