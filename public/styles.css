@@ -805,7 +805,7 @@ body {
 .ap-preview-stage{display:flex;justify-content:center;align-items:flex-start;min-width:0}
 
 /* Página imprimible (8.5x11) del formulario */
-.ap-page{width:8.5in;height:11in;background:#fff;position:relative;box-shadow:0 15px 40px rgba(0,0,0,.16);font-family:'Poppins',sans-serif;color:#1a1a1a;flex:0 0 auto;padding:.3in .4in .3in .55in;overflow:hidden}
+.ap-page{width:8.5in;height:11in;background:#fff;position:relative;box-shadow:0 15px 40px rgba(0,0,0,.16);font-family:'Poppins',sans-serif;color:#1a1a1a;flex:0 0 auto;padding:.2in .4in .2in .55in;overflow:hidden}
 .ap-page .ap-stripe{position:absolute;top:0;left:0;height:100%;width:.2in;object-fit:cover;object-position:left top;z-index:0;pointer-events:none}
 .ap-header{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:.06in}
 .ap-header .ap-logo{height:.6in;width:auto;max-width:3in;object-fit:contain}
@@ -823,7 +823,7 @@ body {
 .ap-nat-body .on{font-weight:700}
 .ap-nat-rango{margin-top:3pt!important;font-style:italic}
 .ap-firmas td{border:none!important}
-.ap-firma{height:1.05in;vertical-align:bottom;padding:.14in 0 6pt!important;border:none!important}
+.ap-firma{height:1.3in;vertical-align:bottom;padding:.3in 0 6pt!important;border:none!important}
 .ap-firma-linea{display:block;border-top:.75pt solid #1a1a1a;margin:0 .4in;padding-top:3pt;text-align:center;font-weight:600;font-size:7pt}
 .ap-table colgroup col{}
 .ap-2col col:nth-child(1){width:20%}
