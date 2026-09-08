@@ -1,5 +1,5 @@
 const FECHA_CORTE_INACTIVOS_VACACIONES = '2026-06-25';
-let state = { profile:null, data:{empleados:[],feriados:[],solicitudes:[],certificaciones:[],liquidaciones:[],tickets:[]}, workbook:null };
+let state = { profile:null, data:{empleados:[],feriados:[],solicitudes:[],certificaciones:[],liquidaciones:[],tickets:[],acciones:[]}, workbook:null };
 
 document.getElementById('todayText').textContent = new Date().toLocaleDateString('es-DO',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
 document.getElementById('fechaReferencia').value = hoyISO();
@@ -14,6 +14,7 @@ async function loadData(){
   try {
     state.data = await Api.all();
     renderAll();
+    await cargarHistorialAcciones();
   } catch (err) {
     console.error(err);
     toast(err.message || 'No se pudieron cargar los datos.', 'error');
@@ -609,6 +610,7 @@ async function guardarAccion(){
   const {error} = await Api.insert('acciones_personal', payload);
   if(error) return toast(error.message,'error');
   toast('Acción de personal guardada en el historial');
+  cargarHistorialAcciones();
 }
 
 // Último día del mes anterior respecto a una fecha de referencia (o a hoy).
@@ -763,13 +765,89 @@ async function procesarAccionesMasivo(){
 
   document.getElementById('apBulkMsg').textContent = '';
   result.innerHTML = `<h4>Se registraron ${data.length} acción(es) en el historial ✔</h4>` +
-    (errores.length ? `<p>Filas omitidas (${errores.length}):</p><ul>${errores.map(e=>`<li class="err">${e}</li>`).join('')}</ul>` : '');
+    (errores.length ? `<p>Filas omitidas (${errores.length}):</p><ul>${errores.map(e=>`<li class="err">${e}</li>`).join('')}</ul>` : '') +
+    `<p class="muted">Ya aparecen abajo en <strong>Historial · Acciones registradas</strong>, donde puedes imprimir cada una.</p>`;
   toast(`Carga masiva: ${data.length} acción(es) creada(s)`);
+  cargarHistorialAcciones();
 }
 
 document.getElementById('btnApPlantilla').onclick = plantillaAccionesExcel;
 document.getElementById('apBulkFile').addEventListener('change', apBulkArchivoSeleccionado);
 document.getElementById('btnApBulkProcesar').onclick = procesarAccionesMasivo;
+
+/* ---------- Historial de acciones ---------- */
+const AP_KEY2LABEL = {};
+AP_NATURALEZA.forEach(g => g.items.forEach(([k,label]) => { AP_KEY2LABEL[k] = label; }));
+function accionNaturalezaLabels(a){
+  return (a.naturaleza || []).map(k => AP_KEY2LABEL[k] || k).join(', ');
+}
+
+async function cargarHistorialAcciones(){
+  const { data, error } = await sb.from('acciones_personal')
+    .select('*').order('created_at', { ascending:false }).limit(1000);
+  if(error){ console.warn('No se pudo cargar el historial de acciones:', error.message); return; }
+  state.data.acciones = data || [];
+  renderHistorialAcciones();
+}
+
+function renderHistorialAcciones(){
+  const tb = document.getElementById('apHistTable');
+  if(!tb) return;
+  const rows = state.data.acciones || [];
+  const cnt = document.getElementById('apHistCount');
+  if(cnt) cnt.textContent = rows.length ? `${rows.length} registro(s)` : '';
+  tb.innerHTML = rows.map(a => `<tr>
+    <td>${mostrarFecha(a.fecha_accion)}</td>
+    <td><strong>${a.nombre || ''}</strong></td>
+    <td>${a.cedula ? formatearCedula(a.cedula) : ''}</td>
+    <td>${accionNaturalezaLabels(a)}</td>
+    <td>${mostrarFecha(a.created_at)}</td>
+    <td><button class="btn secondary" onclick="imprimirAccionHistorial('${a.id}')">Imprimir</button></td>
+  </tr>`).join('') || '<tr><td colspan="6">Aún no hay acciones registradas.</td></tr>';
+}
+
+// Pinta la hoja de vista previa a partir de una acción guardada (no de los inputs).
+function pintarPreviewDesdeAccion(a){
+  const nat = new Set(a.naturaleza || []);
+  setText('apvNombre', a.nombre || '');
+  setText('apvCedula', a.cedula ? formatearCedula(a.cedula) : '');
+  setText('apvDepartamento', a.direccion_departamento || '');
+  setText('apvSuperior', a.superior_inmediato || '');
+  setText('apvSede', a.sede_trabajo || '');
+  setText('apvCargo', a.cargo || '');
+  setText('apvFechaIngreso', a.fecha_ingreso ? mostrarFecha(a.fecha_ingreso) : '');
+  setText('apvSueldo', a.sueldo ? money(a.sueldo) : '');
+  AP_NATURALEZA.forEach(g => {
+    let html = g.items.map(([k,label]) => apCheckbox(nat.has(k), label)).join('');
+    if(g.grupo === 'Licencia'){
+      const d1 = a.licencia_desde ? mostrarFecha(a.licencia_desde) : '';
+      const d2 = a.licencia_hasta ? mostrarFecha(a.licencia_hasta) : '';
+      const rango = (d1 || d2) ? `${d1||'____'} - ${d2||'____'}` : '';
+      html += `<span class="ap-nat-rango">Desde- Hasta: ${rango}</span>`;
+    }
+    setHtml(g.cell, html);
+  });
+  const hayCambio = (a.naturaleza||[]).some(k => AP_CAMBIO_KEYS.has(k)) ||
+    a.cambio_area_trabajo || a.cambio_cargo_aprobado || a.cambio_sede_trabajo ||
+    a.cambio_superior_inmediato || a.cambio_salario_aprobado;
+  setText('apvCambioArea', a.cambio_area_trabajo || '');
+  setText('apvCambioSuperior', a.cambio_superior_inmediato || '');
+  setText('apvCambioSede', a.cambio_sede_trabajo || '');
+  setText('apvCambioCargo', a.cambio_cargo_aprobado || '');
+  setText('apvCambioAumento', hayCambio ? (a.cambio_aplica_aumento ? 'Sí' : 'No') : '');
+  setText('apvCambioSalario', a.cambio_salario_aprobado ? money(a.cambio_salario_aprobado) : '');
+  setText('apvMotivacion', a.motivacion || '');
+  setText('apvFechaAccion', a.fecha_accion ? mostrarFecha(a.fecha_accion) : '');
+}
+
+function imprimirAccionHistorial(id){
+  const a = (state.data.acciones || []).find(x => x.id === id);
+  if(!a) return toast('Acción no encontrada','error');
+  pintarPreviewDesdeAccion(a);
+  document.getElementById('apPrintArea').scrollIntoView({ block:'start' });
+  setTimeout(() => window.print(), 60);
+}
+window.imprimirAccionHistorial = imprimirAccionHistorial;
 
 async function boot(){ const {data:{session}}=await sb.auth.getSession(); if(!session)return; state.profile=await Api.profile(); document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); await loadData(); }
 boot();
