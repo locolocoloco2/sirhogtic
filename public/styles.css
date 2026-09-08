@@ -822,8 +822,9 @@ body {
 .ap-nat-body span{display:block;margin:1pt 0}
 .ap-nat-body .on{font-weight:700}
 .ap-nat-rango{margin-top:3pt!important;font-style:italic}
-.ap-firmas td{border:.5pt solid #d5d5d5}
-.ap-firma{height:.72in;vertical-align:bottom;text-align:center;font-weight:600;font-size:7pt;padding:0 4pt 4pt!important}
+.ap-firmas td{border:none!important}
+.ap-firma{height:.85in;vertical-align:bottom;padding:0 0 5pt!important;border:none!important}
+.ap-firma-linea{display:block;border-top:.75pt solid #1a1a1a;margin:0 .4in;padding-top:3pt;text-align:center;font-weight:600;font-size:7pt}
 .ap-table colgroup col{}
 .ap-2col col:nth-child(1){width:20%}
 .ap-2col col:nth-child(2){width:40%}
@@ -846,7 +847,7 @@ body {
   #apPrintArea,#apPrintArea *{visibility:visible!important}
   #apPrintArea{position:fixed!important;left:0!important;top:0!important;width:8.5in!important;height:11in!important;margin:0!important;box-shadow:none!important;transform:none!important;overflow:hidden!important;page-break-after:avoid!important;break-after:avoid-page!important}
   /* Los valores nunca en azul (evita autodetección de enlaces/teléfono al imprimir). */
-  #apPrintArea .ap-val,#apPrintArea .ap-lbl,#apPrintArea .ap-nat-head td,#apPrintArea .ap-nat-body td,#apPrintArea .ap-firma,#apPrintArea .ap-meta{color:#1a1a1a!important;-webkit-text-fill-color:#1a1a1a!important}
+  #apPrintArea .ap-val,#apPrintArea .ap-lbl,#apPrintArea .ap-nat-head td,#apPrintArea .ap-nat-body td,#apPrintArea .ap-firma,#apPrintArea .ap-firma-linea,#apPrintArea .ap-meta{color:#1a1a1a!important;-webkit-text-fill-color:#1a1a1a!important}
   /* Bandas conservan su texto blanco. */
   #apPrintArea .ap-band,#apPrintArea .ap-doc-title{color:#fff!important;-webkit-text-fill-color:#fff!important}
   /* Imprimir fondos (bandas grises/azul y franja). */
