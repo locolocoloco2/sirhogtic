@@ -6,8 +6,24 @@ document.getElementById('fechaReferencia').value = hoyISO();
 document.getElementById('certFecha').value = hoyISO();
 
 function isAdmin(){ return state.profile?.role === 'admin'; }
+// Rol restringido: SOLO ve y usa el modulo de Acciones de Personal.
+function isSoloAcciones(){ return state.profile?.role === 'acciones'; }
 function applyRoleUI(){
   document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin()));
+
+  // Con rol "acciones" se oculta todo el menu salvo Acciones de Personal
+  // (sin tocar la logica de admin-only del resto de roles).
+  if(isSoloAcciones()){
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.classList.toggle('hidden', b.dataset.page !== 'acciones');
+    });
+    document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const btn = document.querySelector('.nav-btn[data-page="acciones"]');
+    if(btn) btn.classList.add('active');
+    document.getElementById('page-acciones')?.classList.add('active');
+  }
+
   document.getElementById('userRoleText').textContent = `${state.profile?.email || ''} · ${state.profile?.role || ''}`;
 }
 async function loadData(){

@@ -153,6 +153,12 @@ body {
   color: #071a33 !important;
 }
 
+/* Un boton de menu con .hidden debe ocultarse de verdad
+   (la regla .nav-btn{display:flex!important} le ganaba a .hidden). */
+.nav-btn.hidden {
+  display: none !important;
+}
+
 .brand-card h2,
 .hero h1,
 .card h2 {
