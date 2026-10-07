@@ -310,9 +310,20 @@ function verboCertificacion(estatus){
   const s=String(estatus||'').toLowerCase();
   return s.includes('desvinc') || s.includes('inactivo') || s.includes('retir') ? 'laboró' : 'labora';
 }
+let certLastCedula=null; // para autocompletar el cargo solo al cambiar de empleado
 function previewCert(){
   const e=findEmp(document.getElementById('certCedula').value);
   if(!e){ toast('Empleado no encontrado','error'); return false; }
+
+  // El cargo se autocompleta desde la nomina al elegir empleado, pero queda
+  // editable (hay registros con el departamento guardado como cargo).
+  const certCargoEl=document.getElementById('certCargo');
+  const cedulaNorm=normalizarCedula(e.cedula);
+  if(certCargoEl && certLastCedula!==cedulaNorm){
+    certCargoEl.value=e.cargo||'';
+    certLastCedula=cedulaNorm;
+  }
+  const cargoCert=((certCargoEl?.value)||e.cargo||'').trim();
 
   const oficio=document.getElementById('certOficio').value||'RRHH- ____-__';
   const fecha=document.getElementById('certFecha').value||hoyISO();
@@ -330,7 +341,7 @@ function previewCert(){
     : `${verbo} en esta Institución desde el ${fechaIngresoTexto}`;
 
   document.getElementById('certP1').innerHTML=
-    `Por este medio hacemos constar que ${tr[0]} ${tr[1]} <strong>${e.nombre}</strong>, Cédula de Identidad y Electoral <strong>Núm. ${formatearCedula(e.cedula)}</strong>, ${tramoLaboral}, desempeñándose como <strong>${e.cargo||''}</strong>, devengando un salario mensual de <strong>${money(e.sueldo)} (${salarioLetras(e.sueldo)})</strong>.`;
+    `Por este medio hacemos constar que ${tr[0]} ${tr[1]} <strong>${e.nombre}</strong>, Cédula de Identidad y Electoral <strong>Núm. ${formatearCedula(e.cedula)}</strong>, ${tramoLaboral}, desempeñándose como <strong>${cargoCert}</strong>, devengando un salario mensual de <strong>${money(e.sueldo)} (${salarioLetras(e.sueldo)})</strong>.`;
 
   const vacacionesTexto=document.getElementById('certVacaciones')?.value || '';
   const parrafoVacaciones=segundoParrafoVacaciones(e, vacacionesTexto);
